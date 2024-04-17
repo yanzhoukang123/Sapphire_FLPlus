@@ -1164,12 +1164,6 @@ namespace Azure.ScannerEUI.ViewModel
                             {
                                 FrontDoorOpenMonitoring();
                             }
-                            Workspace.This.IVVM.TurnOffAllLasers();//关闭所有激光器 Turn off all lasers
-                            //for (int i = 0; i < 10; i++)
-                            //{
-                            //    Thread.Sleep(500);
-                            //    Console.WriteLine("下电之前状态:"+Workspace.This.EthernetController.OpticalModulePowerStatus + "-" + "控制:"+Workspace.This.EthernetController.OpticalModulePowerMonitor);
-                            //}
                             _EthernetController.SetShutdown(1);  //下电 optical module Power Down
                             if (Workspace.This.EthernetController.DevicePowerStatus)
                             {
@@ -2404,13 +2398,13 @@ namespace Azure.ScannerEUI.ViewModel
             worker.RunWorkerAsync();
 
         }
-        //检测前门状态，这表示用户打开了前门，并且已经对光学模块下电了
-        //Check the status of the front door, which indicates that the user has opened the front door and has powered off the optical module
+        //检测前门状态，这表示用户打开了前门，
+        //Check the status of the front door, which indicates that the user has opened the front door,
         public void FrontDoorOpenMonitoring()
         {
             Application.Current.Dispatcher.Invoke((Action)delegate
             {
-                _EthernetController.SetShutdown(1);  //下电 optical module Power Down
+                //_EthernetController.SetShutdown(1);  //下电 optical module Power Down
                 Window window = new Window();
                 window.Topmost = true;
                 MessageBoxResult boxResult = MessageBoxResult.None;

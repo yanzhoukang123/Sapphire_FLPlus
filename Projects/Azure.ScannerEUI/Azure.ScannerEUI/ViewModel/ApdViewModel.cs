@@ -198,7 +198,7 @@ namespace Azure.ScannerEUI.ViewModel
                             Workspace.This.MotorIsAlive = false;
                             Workspace.This.ScanIsAlive = false;
                             Workspace.This.DisconnectDeviceEnable = false;
-                            Workspace.This.EthernetController.SetLedBarMarquee(LEDBarChannel.LEDBarGreen, 9, false);
+                            //Workspace.This.EthernetController.SetLedBarMarquee(LEDBarChannel.LEDBarGreen, 9, false);
                             MessageBox.Show("System is detected power off, please power on the system and restart the GUI software");
                             Workspace.This.Owner.Dispatcher.BeginInvoke((Action)delegate
                             {
@@ -224,22 +224,22 @@ namespace Azure.ScannerEUI.ViewModel
                     _OpticalModulePowerMonitor = value;
                     Workspace.This.OpticalModulePowerMonitor = (bool)value;
 
-                    if (value == true)  // optical module power is on
-                    {
-                        // let LED bar to beep
-                        Workspace.This.EthernetController.SetBuzzer(1, 20);
-                    }
-                    else        // optical module power is off
-                    {
-                        // let LED bar to flow and beep
-                        // If the firmware version is 1.1.0.0 and the LED version number is "254.255.255.255", perform the following operation
-                        if (Workspace.This.ScannerVM.LEDVersion != Workspace.This.NewParameterVM.Str16Code)
-                        {
-                            Workspace.This.EthernetController.SetLedBarProgress(0);
-                            Workspace.This.EthernetController.SetLedBarMarquee(LEDBarChannel.LEDBarGreen, 9, true);
-                        }
-                        Workspace.This.EthernetController.SetBuzzer(1, 20);
-                    }
+                    //if (value == true)  // optical module power is on
+                    //{
+                    //    // let LED bar to beep
+                    //    Workspace.This.EthernetController.SetBuzzer(1, 20);
+                    //}
+                    //else        // optical module power is off
+                    //{
+                    //    // let LED bar to flow and beep
+                    //    // If the firmware version is 1.1.0.0 and the LED version number is "254.255.255.255", perform the following operation
+                    //    if (Workspace.This.ScannerVM.LEDVersion != Workspace.This.NewParameterVM.Str16Code)
+                    //    {
+                    //        Workspace.This.EthernetController.SetLedBarProgress(0);
+                    //        Workspace.This.EthernetController.SetLedBarMarquee(LEDBarChannel.LEDBarGreen, 9, true);
+                    //    }
+                    //    Workspace.This.EthernetController.SetBuzzer(1, 20);
+                    //}
                 }
             }
         }
@@ -789,7 +789,7 @@ namespace Azure.ScannerEUI.ViewModel
                         viewModel.ExecuteStopScanCommand(null);
                     }
                     Workspace.This._ProgressDialogHelper.WorkerThreadAbort();
-                    _EthernetController.SetShutdown(1);  //下电 optical module Power Down
+                    //_EthernetController.SetShutdown(1);  //下电 optical module Power Down
                     Window window = new Window();
                     window.Topmost = true;
                     MessageBoxResult boxResult = MessageBoxResult.None;
