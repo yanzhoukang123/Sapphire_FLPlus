@@ -37,13 +37,20 @@ namespace Azure.ScannerEUI.View
             //The general personalization parameters are loaded when the form loads
             if (Workspace.This.NewParameterVM != null)
                 Workspace.This.NewParameterVM.ExecuteParametersReadCommand(null);
-            if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Standard||
-                Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard
-                && Workspace.This.ScannerVM.LEDVersion != Workspace.This.NewParameterVM.Str16Code)
+            if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Standard || Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard)
             {
-                oldVesion_lalSerialNumber.Visibility = Visibility.Hidden;
-                oldVesion_txtSerialNumber.Visibility = Visibility.Hidden;
+                if (Workspace.This.ScannerVM.LEDVersion != Workspace.This.NewParameterVM.Str16Code) //LED版本号正确的获取到了,The correct LED version number has been obtained
+                {
+                    oldVesion_lalSerialNumber.Visibility = Visibility.Hidden;
+                    oldVesion_txtSerialNumber.Visibility = Visibility.Hidden;
+                }
+                else 
+                {
+                    oldVesion_lalSerialNumber.Visibility = Visibility.Visible;
+                    oldVesion_txtSerialNumber.Visibility = Visibility.Visible;
+                }
             }
+
         }
         private static bool IsTextAllowed(string text)
         {
@@ -58,6 +65,7 @@ namespace Azure.ScannerEUI.View
         private void Window_Closed(object sender, EventArgs e)
         {
             Workspace.This.NewParameterVM.IsShowParameterWindow = false;
+            Workspace.This.IVVM.PauseTemperatureAlarms(true);  //继续温度报警  continue temperature alarm
         }
     }
 }

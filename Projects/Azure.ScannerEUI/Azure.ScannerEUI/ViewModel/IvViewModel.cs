@@ -1209,8 +1209,9 @@ namespace Azure.ScannerEUI.ViewModel
         bool AlerWindow = true;
         int LastFanSleep = 0;
         int Stopwatch = 0;
-        private int timing = 0;
-        private int count = 200;
+        public int timing = 0;
+        private int count_532_module = 200;
+        private int count_other_module = 40;
         private bool LIsWindow = true;
         private bool R1IsWindow = true;
         private bool R2IsWindow = true;
@@ -1218,31 +1219,39 @@ namespace Azure.ScannerEUI.ViewModel
         private void OnTemperatureTime()
         {
             //GenerateReportTemperature();
-            if (Workspace.This.IVVM.WL1 != 0)
-                EthernetDevice.GetAllTECControlTTemperatures(LaserChannels.ChannelC);
-            if (Workspace.This.IVVM.WR1 != 0)
-                EthernetDevice.GetAllTECControlTTemperatures(LaserChannels.ChannelA);
-            if (Workspace.This.IVVM.WR2 != 0)
-                EthernetDevice.GetAllTECControlTTemperatures(LaserChannels.ChannelB);
+            //读取模块通道的标定控制温度      //Read the calibrated control temperature of the module channels
+            for (int i = 0; i < 3; i++)
+            {
+                if (Workspace.This.IVVM.WL1 != 0)
+                {
+                    Thread.Sleep(200);
+                    EthernetDevice.GetAllTECControlTTemperatures(LaserChannels.ChannelC);
+                }
+                if (Workspace.This.IVVM.WR1 != 0)
+                {
+                    Thread.Sleep(200);
+                    EthernetDevice.GetAllTECControlTTemperatures(LaserChannels.ChannelA);
+                }
+                if (Workspace.This.IVVM.WR2 != 0)
+                {
+                    Thread.Sleep(200);
+                    EthernetDevice.GetAllTECControlTTemperatures(LaserChannels.ChannelB);
+                }
+            }
             while (true)
             {
                 Thread.Sleep(3000);
                 timing++;
                 //   When the optical module is powered on and the version is 1.1.0.0 or 1.2.0.0   光学模块上电并且版本是（HW Version 1.1.0.0/1.2.0.0） 
-                if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Standard|| Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard)
+                if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Standard || Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard && !Workspace.This.PC_OpticalModulePowerOn_Off)
                 {
                     //Obtain ambient temperature
                     EthernetDevice.GetAmbientTemperature();
-                    double CH1Temerature = EthernetDevice.AmbientTemperature[AmbientTemperatureChannel.CH1];
+                    double AmbientTemperature = EthernetDevice.AmbientTemperature[AmbientTemperatureChannel.CH1];
                     // double CH2Temerature = EthernetDevice.AmbientTemperature[AmbientTemperatureChannel.CH2];
-                    Workspace.This.AmbientTemperatureCH1 = CH1Temerature;
+                    Workspace.This.AmbientTemperatureCH1 = AmbientTemperature;
                     //Workspace.This.AmbientTemperatureCH2 = CH2Temerature;
-                    //double MaxTemperature = Math.Max(CH1Temerature, CH2Temerature);
-                    double MaxTemperature = CH1Temerature;
                     int FanSleep = 0;
-                    double L1ModuleTemperatureDiff = 0;
-                    double R1ModuleTemperatureDiff = 0;
-                    double R2ModuleTemperatureDiff = 0;
                     //L通道有模块存在 There are modules present in the L channel
                     if (Workspace.This.IVVM.WL1 != 0 && Workspace.This.IVVM.WL1 != Workspace.This.NewParameterVM.Uint16Code && Workspace.This.OpticalModulePowerStatus)
                     {
@@ -1250,66 +1259,18 @@ namespace Azure.ScannerEUI.ViewModel
                         SensorTemperatureL1 = EthernetDevice.LaserTemperatures[LaserChannels.ChannelC].ToString();
                         EthernetDevice.GetSingeRadiatorTemperatures(SubSys.LaserChC);
                         SensorRadTemperaTureL1 = EthernetDevice.RadiatorTemperatures[LaserChannels.ChannelC];
-                        L1ModuleTemperatureDiff = Convert.ToDouble(SensorRadTemperaTureL1) - Convert.ToDouble(SensorTemperatureL1);
-
-                        //停止和低速
-                        //Stop and low speed
-                        if (ModuleLowTemperature > L1ModuleTemperatureDiff || MaxTemperature < InternalLowTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= L1ModuleTemperatureDiff || MaxTemperature < InternalLowTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-
-                        //停止和低中速
-                        //Stop and low to medium speed
-                        if (ModuleLowTemperature > L1ModuleTemperatureDiff || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= L1ModuleTemperatureDiff && L1ModuleTemperatureDiff < ModuleModerateTemperature || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-                        if (ModuleModerateTemperature <= L1ModuleTemperatureDiff && L1ModuleTemperatureDiff < ModuleHighTemperature || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 2;
-                        }
-                        if (ModuleHighTemperature <= L1ModuleTemperatureDiff || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 3;
-                        }
-
-                        //停止和低中高速
-                        //Stop and low, medium, and high speed
-                        if (ModuleLowTemperature > L1ModuleTemperatureDiff || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= L1ModuleTemperatureDiff && L1ModuleTemperatureDiff < ModuleModerateTemperature || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-                        if (ModuleModerateTemperature <= L1ModuleTemperatureDiff && L1ModuleTemperatureDiff < ModuleHighTemperature || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 2;
-                        }
-                        if (ModuleHighTemperature <= L1ModuleTemperatureDiff || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 3;
-                        }
-                        //high speed
-                        if (InternalHighTemperature <= L1ModuleTemperatureDiff)
-                        {
-                            FanSleep = 3;
-                        }
-                        if (timing > count)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
+                        if (timing > count_532_module && WL1 == 532)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
                         {
                             if (LIsWindow)
                             {
-                                ChannelTemperatureMonitoringAlarms(LaserChannels.ChannelC, WL1);
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelC, WL1);
+                            }
+                        }
+                        else if (timing > count_other_module && WL1 != 532)//软件启动2分钟后开始,先监测其它模块，不包括532  //Software starts 2 minute after startup, other modules are monitored first, excluding 532.
+                        {
+                            if (LIsWindow)
+                            {
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelC, WL1);
                             }
                         }
                     }
@@ -1320,65 +1281,18 @@ namespace Azure.ScannerEUI.ViewModel
                         SensorTemperatureR1 = EthernetDevice.LaserTemperatures[LaserChannels.ChannelA].ToString();
                         EthernetDevice.GetSingeRadiatorTemperatures(SubSys.LaserChA);
                         SensorRadTemperaTureR1 = EthernetDevice.RadiatorTemperatures[LaserChannels.ChannelA];
-                        R1ModuleTemperatureDiff = Convert.ToDouble(SensorRadTemperaTureR1) - Convert.ToDouble(SensorTemperatureR1);
-                        //停止和低速
-                        //Stop and low speed
-                        if (ModuleLowTemperature > R1ModuleTemperatureDiff || MaxTemperature < InternalLowTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= R1ModuleTemperatureDiff || MaxTemperature < InternalLowTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-
-                        //停止和低中速
-                        //Stop and low to medium speed
-                        if (ModuleLowTemperature > R1ModuleTemperatureDiff || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= R1ModuleTemperatureDiff && R1ModuleTemperatureDiff < ModuleModerateTemperature || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-                        if (ModuleModerateTemperature <= R1ModuleTemperatureDiff && R1ModuleTemperatureDiff < ModuleHighTemperature || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 2;
-                        }
-                        if (ModuleHighTemperature <= R1ModuleTemperatureDiff || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 3;
-                        }
-
-                        //停止和低中高速
-                        //Stop and low, medium, and high speed
-                        if (ModuleLowTemperature > R1ModuleTemperatureDiff || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= R1ModuleTemperatureDiff && R1ModuleTemperatureDiff < ModuleModerateTemperature || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-                        if (ModuleModerateTemperature <= R1ModuleTemperatureDiff && R1ModuleTemperatureDiff < ModuleHighTemperature || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 2;
-                        }
-                        if (ModuleHighTemperature <= R1ModuleTemperatureDiff || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 3;
-                        }
-                        //high speed
-                        if (InternalHighTemperature <= R1ModuleTemperatureDiff)
-                        {
-                            FanSleep = 3;
-                        }
-                        if (timing > count)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
+                        if (timing > count_532_module && WR1 == 532)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
                         {
                             if (R1IsWindow)
                             {
-                                ChannelTemperatureMonitoringAlarms(LaserChannels.ChannelA, WR1);
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelA, WR1);
+                            }
+                        }
+                        else if (timing > count_other_module && WR1 != 532)//软件启动2分钟后开始,先监测其它模块，不包括532  //Software starts 2 minute after startup, other modules are monitored first, excluding 532.
+                        {
+                            if (R1IsWindow)
+                            {
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelA, WR1);
                             }
                         }
                     }
@@ -1389,99 +1303,85 @@ namespace Azure.ScannerEUI.ViewModel
                         SensorTemperatureR2 = EthernetDevice.LaserTemperatures[LaserChannels.ChannelB].ToString();
                         EthernetDevice.GetSingeRadiatorTemperatures(SubSys.LaserChB);
                         SensorRadTemperaTureR2 = EthernetDevice.RadiatorTemperatures[LaserChannels.ChannelB];
-                        R2ModuleTemperatureDiff = Convert.ToDouble(SensorRadTemperaTureR2) - Convert.ToDouble(SensorTemperatureR2);
-                        //Stop and low speed
-                        //停止和低速
-                        if (ModuleLowTemperature > R2ModuleTemperatureDiff || MaxTemperature < InternalLowTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= R2ModuleTemperatureDiff || MaxTemperature < InternalLowTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-                        //Stop and low to medium speed
-                        //停止和低中速
-                        if (ModuleLowTemperature > R2ModuleTemperatureDiff || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= R2ModuleTemperatureDiff && R2ModuleTemperatureDiff < ModuleModerateTemperature || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-                        if (ModuleModerateTemperature <= R2ModuleTemperatureDiff && R2ModuleTemperatureDiff < ModuleHighTemperature || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 2;
-                        }
-                        if (ModuleHighTemperature <= R2ModuleTemperatureDiff || InternalLowTemperature <= MaxTemperature && MaxTemperature < InternalModerateTemperature)
-                        {
-                            FanSleep = 3;
-                        }
-                        //Stop and low, medium, and high speed
-                        //停止和低中高速
-                        if (ModuleLowTemperature > R2ModuleTemperatureDiff || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 0;
-                        }
-                        if (ModuleLowTemperature <= R2ModuleTemperatureDiff && R2ModuleTemperatureDiff < ModuleModerateTemperature || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 1;
-                        }
-                        if (ModuleModerateTemperature <= R2ModuleTemperatureDiff && R2ModuleTemperatureDiff < ModuleHighTemperature || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 2;
-                        }
-                        if (ModuleHighTemperature <= R2ModuleTemperatureDiff || InternalModerateTemperature <= MaxTemperature && MaxTemperature < InternalHighTemperature)
-                        {
-                            FanSleep = 3;
-                        }
-                        //high speed
-                        if (InternalHighTemperature <= R2ModuleTemperatureDiff)
-                        {
-                            FanSleep = 3;
-                        }
-                        if (timing > count)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
+                        if (timing > count_532_module && WR2 == 532)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
                         {
                             if (R2IsWindow)
                             {
-                                ChannelTemperatureMonitoringAlarms(LaserChannels.ChannelB, WR2);
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelB, WR2);
+                            }
+                        }
+                        else if (timing > count_other_module && WR2 != 532)//软件启动2分钟后开始,先监测其它模块，不包括532  //Software starts 2 minute after startup, other modules are monitored first, excluding 532.
+                        {
+                            if (R2IsWindow)
+                            {
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelB, WR2);
                             }
                         }
                     }
-                    //CH1 Warning temperature
+
+                    //AmbientTemperature Warning 
                     if (Workspace.This.NewParameterVM.CH1AlertWarningSwitch == 1 && AlerWindow)
                     {
-                        if (CH1Temerature > Workspace.This.NewParameterVM.CH1WarningTemperature && Workspace.This.NewParameterVM.CH1WarningTemperature != 0)
+                        if (AmbientTemperature > Workspace.This.NewParameterVM.CH1WarningTemperature && Workspace.This.NewParameterVM.CH1WarningTemperature != 0)
                         {
                             AlerWindow = false;
                             CH1TemperatureShow();
                         }
                     }
-                    //根据AmbientTemperatureCH1和AmbientTemperatureCH2设置风扇等级  //Set fan level based on AmbientTemperatureCH1 and AmbientTemperatureCH2
-                    if (Workspace.This.NewParameterVM.SelectedIncrustation == "Auto" || Workspace.This.NewParameterVM.SelectedIncrustation == null)
+
+                    //设备有模块的时候才控制背板风扇转动 //Control the backplane fan only when the device has modules
+                    if (Workspace.This.IVVM.WL1 != 0 || Workspace.This.IVVM.WR1 != 0 || Workspace.This.IVVM.WR2 != 0)
                     {
-                        //本次风扇等级大于上一次记录的风扇等级，风扇直接跳到指定的等级
-                        //The fan level this time is greater than the fan level recorded last time
-                        if (FanSleep >= LastFanSleep)
+                        if (AmbientTemperature < InternalLowTemperature)
                         {
-                            Workspace.This.EthernetController.SetIncrustationFan(1, FanSleep);
-                            //记录风扇等级
-                            //Record fan level
-                            LastFanSleep = FanSleep;
+                            //停止 stop
+                            FanSleep = 0;
                         }
-                        else
+                        else if (AmbientTemperature >= InternalLowTemperature && AmbientTemperature < InternalModerateTemperature)
                         {
-                            //本次风扇等级小于上一次记录的风扇等级，减速前风扇保持原来的等级两分钟
-                            ////The fan level this time is lower than the fan level recorded last time. Before deceleration, the fan should maintain its original level for two minutes
-                            Stopwatch++;
-                            if (Stopwatch == 40)  //两分钟 3000ms * 40=120000
+                            //Low speed
+                            FanSleep = 1;
+                        }
+                        else if (AmbientTemperature >= InternalModerateTemperature && AmbientTemperature < InternalHighTemperature)
+                        {
+                            //Medium speed
+                            FanSleep = 2;
+                        }
+                        else if (AmbientTemperature >= InternalHighTemperature)
+                        {
+                            //High speed
+                            FanSleep = 3;
+                        }
+                        //根据AmbientTemperatureCH1和AmbientTemperatureCH2设置风扇等级  //Set fan level based on AmbientTemperatureCH1 and AmbientTemperatureCH2
+                        if (Workspace.This.NewParameterVM.SelectedIncrustation == "Auto" || Workspace.This.NewParameterVM.SelectedIncrustation == null)
+                        {
+                            //本次风扇等级大于上一次记录的风扇等级，风扇直接跳到指定的等级
+                            //The fan level this time is greater than the fan level recorded last time
+                            if (FanSleep >= LastFanSleep)
                             {
-                                Stopwatch = 0;
-                                Workspace.This.EthernetController.SetIncrustationFan(1, LastFanSleep -= 1);
+                                Workspace.This.EthernetController.SetIncrustationFan(1, FanSleep);
+                                //记录风扇等级
+                                //Record fan level
+                                LastFanSleep = FanSleep;
                             }
-                            continue;
+                            else
+                            {
+                                //本次风扇等级小于上一次记录的风扇等级，减速前风扇保持原来的等级两分钟
+                                ////The fan level this time is lower than the fan level recorded last time. Before deceleration, the fan should maintain its original level for two minutes
+                                Stopwatch++;
+                                if (Stopwatch == 40)  //两分钟 3000ms * 40=120000
+                                {
+                                    Stopwatch = 0;
+                                    Workspace.This.EthernetController.SetIncrustationFan(1, LastFanSleep -= 1);
+                                }
+                                continue;
+                            }
                         }
+                    }
+                    else
+                    {
+                        FanSleep = 0;
+                        Workspace.This.EthernetController.SetIncrustationFan(1, FanSleep);
                     }
                 }
                 else
@@ -1493,11 +1393,18 @@ namespace Azure.ScannerEUI.ViewModel
                         SensorTemperatureL1 = EthernetDevice.LaserTemperatures[LaserChannels.ChannelC].ToString();
                         EthernetDevice.GetSingeRadiatorTemperatures(SubSys.LaserChC);
                         SensorRadTemperaTureL1 = EthernetDevice.RadiatorTemperatures[LaserChannels.ChannelC];
-                        if (timing > count)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
+                        if (timing > count_532_module && WL1 == 532)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
                         {
                             if (LIsWindow)
                             {
-                                ChannelTemperatureMonitoringAlarms(LaserChannels.ChannelC, WL1);
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelC, WL1);
+                            }
+                        }
+                        else if (timing > count_other_module && WL1 != 532)//软件启动2分钟后开始,先监测其它模块，不包括532  //Software starts 1 minute after startup, other modules are monitored first, excluding 532.
+                        {
+                            if (LIsWindow)
+                            {
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelC, WL1);
                             }
                         }
                     }
@@ -1507,11 +1414,18 @@ namespace Azure.ScannerEUI.ViewModel
                         SensorTemperatureR1 = EthernetDevice.LaserTemperatures[LaserChannels.ChannelA].ToString();
                         EthernetDevice.GetSingeRadiatorTemperatures(SubSys.LaserChA);
                         SensorRadTemperaTureR1 = EthernetDevice.RadiatorTemperatures[LaserChannels.ChannelA];
-                        if (timing > count)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
+                        if (timing > count_532_module && WR1 == 532)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
                         {
-                            if (R1IsWindow)  
+                            if (R1IsWindow)
                             {
-                                ChannelTemperatureMonitoringAlarms(LaserChannels.ChannelA, WR1);
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelA, WR1);
+                            }
+                        }
+                        else if (timing > count_other_module && WR1 != 532)//软件启动2分钟后开始,先监测其它模块，不包括532  //Software starts 1 minute after startup, other modules are monitored first, excluding 532.
+                        {
+                            if (R1IsWindow)
+                            {
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelC, WR1);
                             }
                         }
                     }
@@ -1521,11 +1435,18 @@ namespace Azure.ScannerEUI.ViewModel
                         SensorTemperatureR2 = EthernetDevice.LaserTemperatures[LaserChannels.ChannelB].ToString();
                         EthernetDevice.GetSingeRadiatorTemperatures(SubSys.LaserChB);
                         SensorRadTemperaTureR2 = EthernetDevice.RadiatorTemperatures[LaserChannels.ChannelB];
-                        if (timing > count)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
+                        if (timing > count_532_module && WR2 == 532)//软件启动10分钟后开始（200*3000=600000）,//The software starts 10 minutes after startup (200 * 3000=600000),
                         {
                             if (R2IsWindow)
                             {
-                                ChannelTemperatureMonitoringAlarms(LaserChannels.ChannelB, WR2);
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelB, WR2);
+                            }
+                        }
+                        else if (timing > count_other_module && WR2 != 532)//软件启动2分钟后开始,先监测其它模块，不包括532 ////Software starts 1 minute after startup, other modules are monitored first, excluding 532.
+                        {
+                            if (R2IsWindow)
+                            {
+                                ChannelTECTemperatureMonitoringAlarms(LaserChannels.ChannelC, WR2);
                             }
                         }
                     }
@@ -1683,7 +1604,7 @@ namespace Azure.ScannerEUI.ViewModel
         }
 
         //模块的TEC温度不能大于实际控制温度的+-0.2，The TEC temperature of the module cannot be greater than +-0.2 of the actual control temperature，
-        private void ChannelTemperatureMonitoringAlarms(LaserChannels Channel,int wavelength)
+        private void ChannelTECTemperatureMonitoringAlarms(LaserChannels Channel,int wavelength)
         {
             void msgSend() 
             {
@@ -1692,115 +1613,139 @@ namespace Azure.ScannerEUI.ViewModel
                 double temperaturedeviation = 0.2;
                 double TecControlTemperature = EthernetController.TECControlTemperature[Channel];
                 #region L Channel
-                if (Channel == LaserChannels.ChannelC && TecControlTemperature != 0)
+                if (Channel == LaserChannels.ChannelC)
                 {
-                    double sensorTemperatureL1 = Convert.ToDouble(SensorTemperatureL1);
-                    if (sensorTemperatureL1 > TecControlTemperature + temperaturedeviation ||
-                        sensorTemperatureL1 < TecControlTemperature - temperaturedeviation)
+                    if (TecControlTemperature != 0)
                     {
-                        LIsWindow = false;
-                        string msg = "L Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureL1 = Convert.ToDouble(SensorTemperatureL1);
+                        if (sensorTemperatureL1 > TecControlTemperature + temperaturedeviation ||
+                            sensorTemperatureL1 < TecControlTemperature - temperaturedeviation)
+                        {
+                            LIsWindow = false;
+                            string msg = "L Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
-                }
-                else if (Channel == LaserChannels.ChannelC && TecControlTemperature == 0 && wavelength != 375)
-                {
-                    double sensorTemperatureL1 = Convert.ToDouble(SensorTemperatureL1);
-                    if (sensorTemperatureL1 > DefaultAlarmsTemperature_other + temperaturedeviation ||
-                        sensorTemperatureL1 < DefaultAlarmsTemperature_other - temperaturedeviation)
+                    else if (TecControlTemperature == 0 && wavelength != 375)
                     {
-                        LIsWindow = false;
-                        string msg = "L Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureL1 = Convert.ToDouble(SensorTemperatureL1);
+                        if (sensorTemperatureL1 > DefaultAlarmsTemperature_other + temperaturedeviation ||
+                            sensorTemperatureL1 < DefaultAlarmsTemperature_other - temperaturedeviation)
+                        {
+                            LIsWindow = false;
+                            string msg = "L Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
-                }
-                else if (Channel == LaserChannels.ChannelC && TecControlTemperature == 0 && wavelength == 375)
-                {
-                    double sensorTemperatureL1 = Convert.ToDouble(SensorTemperatureL1);
-                    if (sensorTemperatureL1 > DefaultAlarmsTemperature_375 + temperaturedeviation ||
-                        sensorTemperatureL1 < DefaultAlarmsTemperature_375 - temperaturedeviation)
+                    else if (TecControlTemperature == 0 && wavelength == 375)
                     {
-                        LIsWindow = false;
-                        string msg = "L Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureL1 = Convert.ToDouble(SensorTemperatureL1);
+                        if (sensorTemperatureL1 > DefaultAlarmsTemperature_375 + temperaturedeviation ||
+                            sensorTemperatureL1 < DefaultAlarmsTemperature_375 - temperaturedeviation)
+                        {
+                            LIsWindow = false;
+                            string msg = "L Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
                 }
                 #endregion
 
                 #region R1 Channel
-                if (Channel == LaserChannels.ChannelA && TecControlTemperature != 0)
+                else if (Channel == LaserChannels.ChannelA)
                 {
-                    double sensorTemperatureR1 = Convert.ToDouble(SensorTemperatureR1);
-                    if (sensorTemperatureR1 > TecControlTemperature + temperaturedeviation ||
-                        sensorTemperatureR1 < TecControlTemperature - temperaturedeviation)
+                    if (TecControlTemperature != 0)
                     {
-                        R1IsWindow = false;
-                        string msg = "R1 Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureR1 = Convert.ToDouble(SensorTemperatureR1);
+                        if (sensorTemperatureR1 > TecControlTemperature + temperaturedeviation ||
+                            sensorTemperatureR1 < TecControlTemperature - temperaturedeviation)
+                        {
+                            R1IsWindow = false;
+                            string msg = "R1 Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
-                }
-                else if (Channel == LaserChannels.ChannelA && TecControlTemperature == 0 && wavelength != 375)
-                {
-                    double sensorTemperatureR1 = Convert.ToDouble(SensorTemperatureR1);
-                    if (sensorTemperatureR1 > DefaultAlarmsTemperature_other + temperaturedeviation ||
-                        sensorTemperatureR1 < DefaultAlarmsTemperature_other - temperaturedeviation)
+                    else if (TecControlTemperature == 0 && wavelength != 375)
                     {
-                        R1IsWindow = false;
-                        string msg = "R1 Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureR1 = Convert.ToDouble(SensorTemperatureR1);
+                        if (sensorTemperatureR1 > DefaultAlarmsTemperature_other + temperaturedeviation ||
+                            sensorTemperatureR1 < DefaultAlarmsTemperature_other - temperaturedeviation)
+                        {
+                            R1IsWindow = false;
+                            string msg = "R1 Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
-                }
-                else if (Channel == LaserChannels.ChannelA && TecControlTemperature == 0 && wavelength == 375)
-                {
-                    double sensorTemperatureR1 = Convert.ToDouble(SensorTemperatureR1);
-                    if (sensorTemperatureR1 > DefaultAlarmsTemperature_375 + temperaturedeviation ||
-                        sensorTemperatureR1 < DefaultAlarmsTemperature_375 - temperaturedeviation)
+                    else if (TecControlTemperature == 0 && wavelength == 375)
                     {
-                        R1IsWindow = false;
-                        string msg = "R1 Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureR1 = Convert.ToDouble(SensorTemperatureR1);
+                        if (sensorTemperatureR1 > DefaultAlarmsTemperature_375 + temperaturedeviation ||
+                            sensorTemperatureR1 < DefaultAlarmsTemperature_375 - temperaturedeviation)
+                        {
+                            R1IsWindow = false;
+                            string msg = "R1 Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
                 }
                 #endregion
 
                 #region R2 Channel
-                if (Channel == LaserChannels.ChannelB && TecControlTemperature != 0)
+                else if (Channel == LaserChannels.ChannelB)
                 {
-                    double sensorTemperatureR2 = Convert.ToDouble(SensorTemperatureR2);
-                    if (sensorTemperatureR2 > TecControlTemperature + temperaturedeviation ||
-                        sensorTemperatureR2 < TecControlTemperature - temperaturedeviation)
+                    if (TecControlTemperature != 0)
                     {
-                        R2IsWindow = false;
-                        string msg = "R2 Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureR2 = Convert.ToDouble(SensorTemperatureR2);
+                        if (sensorTemperatureR2 > TecControlTemperature + temperaturedeviation ||
+                            sensorTemperatureR2 < TecControlTemperature - temperaturedeviation)
+                        {
+                            R2IsWindow = false;
+                            string msg = "R2 Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
-                }
-                else if (Channel == LaserChannels.ChannelB && TecControlTemperature == 0 && wavelength != 375)
-                {
-                    double sensorTemperatureR2 = Convert.ToDouble(SensorTemperatureR2);
-                    if (sensorTemperatureR2 > DefaultAlarmsTemperature_other + temperaturedeviation ||
-                        sensorTemperatureR2 < DefaultAlarmsTemperature_other - temperaturedeviation)
+                    else if (TecControlTemperature == 0 && wavelength != 375)
                     {
-                        R2IsWindow = false;
-                        string msg = "R2 Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureR2 = Convert.ToDouble(SensorTemperatureR2);
+                        if (sensorTemperatureR2 > DefaultAlarmsTemperature_other + temperaturedeviation ||
+                            sensorTemperatureR2 < DefaultAlarmsTemperature_other - temperaturedeviation)
+                        {
+                            R2IsWindow = false;
+                            string msg = "R2 Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
-                }
-                else if (Channel == LaserChannels.ChannelB && TecControlTemperature == 0 && wavelength == 375)
-                {
-                    double sensorTemperatureR2 = Convert.ToDouble(SensorTemperatureR2);
-                    if (sensorTemperatureR2 > DefaultAlarmsTemperature_375 + temperaturedeviation ||
-                        sensorTemperatureR2 < DefaultAlarmsTemperature_375 - temperaturedeviation)
+                    else if (TecControlTemperature == 0 && wavelength == 375)
                     {
-                        R2IsWindow = false;
-                        string msg = "R2 Temperature to High!";
-                        MessageBox.Show(msg, "Alarm");
+                        double sensorTemperatureR2 = Convert.ToDouble(SensorTemperatureR2);
+                        if (sensorTemperatureR2 > DefaultAlarmsTemperature_375 + temperaturedeviation ||
+                            sensorTemperatureR2 < DefaultAlarmsTemperature_375 - temperaturedeviation)
+                        {
+                            R2IsWindow = false;
+                            string msg = "R2 Temperature to High!";
+                            MessageBox.Show(msg, "Alarm");
+                        }
                     }
                 }
                 #endregion
             }
             Thread td_msg = new Thread(msgSend);
             td_msg.Start();
+        }
+
+        public void ResetTemperatureAlarmsSwitch(bool Switch)
+        {
+            timing = 0;
+            AlerWindow = Switch;
+            LIsWindow = Switch;
+            R1IsWindow = Switch;
+            R2IsWindow = Switch;
+        }
+        public void PauseTemperatureAlarms(bool Switch)
+        {
+            LIsWindow = Switch;
+            R1IsWindow = Switch;
+            R2IsWindow = Switch;
         }
         #endregion
         #endregion

@@ -789,7 +789,7 @@ namespace Azure.ScannerEUI.ViewModel
                         viewModel.ExecuteStopScanCommand(null);
                     }
                     Workspace.This._ProgressDialogHelper.WorkerThreadAbort();
-                    //_EthernetController.SetShutdown(1);  //下电 optical module Power Down
+                    MonitorOpticalModule();
                     Window window = new Window();
                     window.Topmost = true;
                     MessageBoxResult boxResult = MessageBoxResult.None;
@@ -799,6 +799,66 @@ namespace Azure.ScannerEUI.ViewModel
             }
             Thread td_msg = new Thread(msgSend);
             td_msg.Start();
+        }
+        //开启前门时，FPGA会对光学模块进行下电操作，如果光学模块没有成功下电，需要监测是哪个继电器没有下电成功。
+        ////When opening the front door, the FPGA will perform a power down operation on the optical module. If the optical module fails to power down, it is necessary to monitor which relay did not power down successfully.
+        private void MonitorOpticalModule()
+        {
+            int index = 0;
+            //其中一个没有正常下电，就继续等待，5秒后跳出，True表示状态是上电的,False表示状态是下电的
+            // //One of them did not power down normally, so it continued to wait for 5 seconds before jumping out. True indicates that the status is powered on, and False indicates that the status is powered off
+            while (Workspace.This.EthernetController.OpticalModulePowerStatus || Workspace.This.EthernetController.OpticalModulePowerMonitor)
+            {
+                Thread.Sleep(500);
+                index++;
+                if (index == 10)
+                {
+                    break;
+                }
+            }
+            if (index == 10)
+            {
+                Workspace.This.EthernetController.GetRelayStatus();//获取“光学模块电源继电器状态”和“TEC电源继电器检测状态”Get "Optical Module Power Relay Status" and "TEC Power Relay Detection Status".
+                Thread.Sleep(1000);
+                string title = "";
+                string message = "";
+                if (Workspace.This.EthernetController.OpticalModulePowerRelay)//光学模块电源继电器检测到失败(Error)，
+                {
+                    title = "Error";
+                    message = "Failed to turn off modules' power";
+                    Window window = new Window();
+                    window.Topmost = true;
+                    MessageBox.Show(window, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+                    //关闭RGB灯光,Turn off RGB lights
+                    Workspace.This.EthernetController.SetRGBLightRegisterControl(0);
+                    Workspace.This.Owner.Dispatcher.BeginInvoke((Action)delegate
+                    {
+                        Workspace.This.CloseAppliction();
+                    });
+                }
+                else if (!Workspace.This.EthernetController.OpticalModulePowerRelay && Workspace.This.EthernetController.TECPowerRelayDetection)//TEC电源继电器检测到失败(Alarm)
+                {
+                    title = "Alarm";
+                    message = "Failed to turn off modules' power";
+                    Window window = new Window();
+                    window.Topmost = true;
+                    MessageBox.Show(window, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                else if (!Workspace.This.EthernetController.OpticalModulePowerRelay && !Workspace.This.EthernetController.TECPowerRelayDetection)
+                {
+                    //已知光学模块没有成功下电，但是获取的两个继电器状态是下电，这种可能是设备原因，需要直接关闭软件，并重启设备。
+                    ////It is known that the optical module has not been successfully powered off, but the two relay states obtained are powered off, which may be due to equipment reasons. It is necessary to directly shut down the software and restart the device.
+                    title = "Error";
+                    message = "Failed to turn off modules' power";
+                    Window window = new Window();
+                    window.Topmost = true;
+                    MessageBox.Show(window, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+                    Workspace.This.Owner.Dispatcher.BeginInvoke((Action)delegate
+                    {
+                        Workspace.This.CloseAppliction();
+                    });
+                }
+            }
         }
     }
 

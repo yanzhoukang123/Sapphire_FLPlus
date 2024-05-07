@@ -2662,6 +2662,7 @@ namespace Azure.ScannerEUI.ViewModel
             //}
 
             //ParameterSetup paramSetupWin = new ParameterSetup();
+            Workspace.This.IVVM.PauseTemperatureAlarms(false);  //暂停温度报警   Pause temperature alarm
             NewParameterSetup newParameterSetup = new NewParameterSetup();
             // Needed for centering this dialogbox in the center of the parent window
             newParameterSetup.Owner = Workspace.This.Owner;

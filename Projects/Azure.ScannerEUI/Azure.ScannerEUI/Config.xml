@@ -166,11 +166,11 @@
     <PowersSetting Name="OldPower" Value="20" />
   </OldPowersSetting>
 
-  <RadiatorTemperatures>
-    <RadiatorTemperature Name="RadiatorL" Value="25"/>
-    <RadiatorTemperature Name="RadiatorR1" Value="25"/>
-    <RadiatorTemperature Name="RadiatorR2" Value="25"/>
-  </RadiatorTemperatures>
+   <!--<RadiatorTemperatures>-->
+    <!--<RadiatorTemperature Name="RadiatorL" Value="25"/>-->
+    <!--<RadiatorTemperature Name="RadiatorR1" Value="25"/>-->
+    <!--<RadiatorTemperature Name="RadiatorR2" Value="25"/>-->
+   <!--</RadiatorTemperatures>-->
 
   <PhosphorLaserModules>
     <LaserModule LaserNumber="638" />
@@ -313,9 +313,9 @@
     <ShellFanModule ShellFan="InternalLowTemperature" Value="22"/>
     <ShellFanModule ShellFan="InternalModerateTemperature" Value="25"/>
     <ShellFanModule ShellFan="InternalHighTemperature" Value="27"/>
-    <ShellFanModule ShellFan="ModuleLowTemperature" Value="3"/>
-    <ShellFanModule ShellFan="ModuleModerateTemperature" Value="5"/>
-    <ShellFanModule ShellFan="ModuleHighTemperature" Value="7"/>
+    <!--<ShellFanModule ShellFan="ModuleLowTemperature" Value="3"/>-->
+    <!--<ShellFanModule ShellFan="ModuleModerateTemperature" Value="5"/>-->
+    <!--<ShellFanModule ShellFan="ModuleHighTemperature" Value="7"/>-->
   </ShellFanModules>
   
 

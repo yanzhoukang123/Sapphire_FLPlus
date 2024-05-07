@@ -1033,8 +1033,8 @@ namespace Azure.ScannerEUI.ViewModel
                     StartWaitAnimation("Please wait …");
                     _IsLoading = true;
                     int index = 0;
-                    //其中一个没有正常下电，就继续等待，5秒后跳出，State==true means no power off
-                    // One of them didn't power down properly, so it continued to wait and popped up after 5 seconds
+                    //其中一个没有正常下电，就继续等待，5秒后跳出，True indicates that the relay is still powered on，如果都是False就直接跳出，
+                    // //One of them did not power down normally, so it continued to wait for 5 seconds before jumping out. True indicators that the relay is still powered on, if all are false, it will jump out directly,
                     while (Workspace.This.EthernetController.OpticalModulePowerStatus || Workspace.This.EthernetController.OpticalModulePowerMonitor)
                     {
                         Thread.Sleep(500);
@@ -1069,8 +1069,6 @@ namespace Azure.ScannerEUI.ViewModel
                         {
                             //TEC power relay detected failure(Alarm)
                             //In this situation, one TEC relay is not powered off, just a pop-up reminder is needed
-                            StopWaitAnimation();
-                            _IsLoading = false;
                             title = "Alarm";
                             message = "Failed to turn off modules' power";
                             Window window = new Window();
@@ -1164,6 +1162,7 @@ namespace Azure.ScannerEUI.ViewModel
                             {
                                 FrontDoorOpenMonitoring();
                             }
+                            This.IVVM.ResetTemperatureAlarmsSwitch(false);  //关闭温度报警  close temperature alarm
                             _EthernetController.SetShutdown(1);  //下电 optical module Power Down
                             if (Workspace.This.EthernetController.DevicePowerStatus)
                             {
@@ -1240,6 +1239,7 @@ namespace Azure.ScannerEUI.ViewModel
                                 _IsLoading = true;
                             });
                             _EthernetController.SetShutdown(0);  //上电 Optical module Power up
+                            This.IVVM.ResetTemperatureAlarmsSwitch(true);  //打开温度报警  open temperature alarm
                             //开始继续监测前门状态  Continue to monitor the status of the front door
                             PC_OpticalModulePowerOn_Off = false;
                         }
@@ -2398,8 +2398,8 @@ namespace Azure.ScannerEUI.ViewModel
             worker.RunWorkerAsync();
 
         }
-        //检测前门状态，这表示用户打开了前门，
-        //Check the status of the front door, which indicates that the user has opened the front door,
+        //检测前门状态，这表示用户打开了前门，并且已经对光学模块下电了
+        //Check the status of the front door, which indicates that the user has opened the front door and has powered off the optical module
         public void FrontDoorOpenMonitoring()
         {
             Application.Current.Dispatcher.Invoke((Action)delegate
