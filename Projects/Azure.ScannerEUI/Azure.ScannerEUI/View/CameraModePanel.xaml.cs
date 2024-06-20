@@ -24,34 +24,13 @@ namespace Azure.ScannerEUI.View
         public CameraModePanel()
         {
             InitializeComponent();
-         
-            //this.Loaded += CameraModePanel_Loaded;
+            this.Loaded += CameraModePanel_Loaded;
         }
 
-        /*private void CameraModePanel_Loaded(object sender, RoutedEventArgs e)
+        private void CameraModePanel_Loaded(object sender, RoutedEventArgs e)
         {
-            if (this.DataContext != null)
-            {
-                if (this.DataContext is CameraViewModel)
-                {
-                    if (((CameraViewModel)this.DataContext).BinningOptions != null &&
-                        ((CameraViewModel)this.DataContext).BinningOptions.Count > 0)
-                    {
-                        ((CameraViewModel)this.DataContext).SelectedBinning = ((CameraViewModel)this.DataContext).BinningOptions[0];
-                    }
-                    if (((CameraViewModel)this.DataContext).GainOptions != null &&
-                        ((CameraViewModel)this.DataContext).GainOptions.Count > 0)
-                    {
-                        ((CameraViewModel)this.DataContext).SelectedGain = ((CameraViewModel)this.DataContext).GainOptions[0];
-                    }
-                    if (((CameraViewModel)this.DataContext).ReadoutOptions != null &&
-                        ((CameraViewModel)this.DataContext).ReadoutOptions.Count > 0)
-                    {
-                        ((CameraViewModel)this.DataContext).SelectedReadout = ((CameraViewModel)this.DataContext).ReadoutOptions[0];
-                    }
-                }
-            }
-        }*/
+            DataContext = Workspace.This.CameraModeViewModel;
+        }
 
         private static bool IsTextAllowed(string text)
         {

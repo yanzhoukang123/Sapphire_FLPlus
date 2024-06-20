@@ -402,6 +402,7 @@ namespace Azure.Image.Processing
                 _AvailChannelFlags &= ~flag;
             }
         }
+        public bool IsMultipleGrayscaleChannels { get; set; }
         public bool IsRedChannelAvail
         {
             get { return (_AvailChannelFlags & ImageChannelFlag.Red) != 0; }

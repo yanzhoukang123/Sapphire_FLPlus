@@ -30,8 +30,8 @@
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    
-    <Grid>
+
+    <Grid IsEnabled="{Binding Path=IsCameraPanel}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="4" />
@@ -66,10 +66,10 @@
             </Grid.RowDefinitions>
 
             <!--Column1: Labels-->
-            <Label Grid.Row="0" Grid.Column="0" Content="Exposure (s):" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Label Grid.Row="0" Grid.Column="0" Content="Exposure (ms):" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             <Label Grid.Row="2" Grid.Column="0" Content="Bin:" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             <Label Grid.Row="4" Grid.Column="0" Content="Gain:" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-            <Label Grid.Row="6" Grid.Column="0" Content="Readout" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <!--<Label Grid.Row="6" Grid.Column="0" IsEnabled="False"  Content="Readout" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>-->
 
             <!--Column2-->
             <TextBox x:Name="_ExposureTextBox" Grid.Row="0" Grid.Column="2"
@@ -84,6 +84,7 @@
                 Text="{Binding Path=ExposureTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, TargetNullValue={x:Static sys:String.Empty}}"
                 IsEnabled="{Binding Path=IsEnabledControl}"
                 />
+            <Label Grid.Row="0" Grid.Column="2" Content="{Binding Path=ExposureTimeRange}" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="90,0,62,0"/>
             <ComboBox x:Name="_BinningMode" Grid.Row="2" Grid.Column="2"
                 Style="{StaticResource ComboBoxFlatStyle}"
                 Width="90"
@@ -95,6 +96,7 @@
                 ItemsSource="{Binding Path=BinningOptions}"
                 DisplayMemberPath="DisplayName"
                 IsEnabled="{Binding Path=IsEnabledControl}"/>
+            <!--IsEnabled="False"      />-->
             <ComboBox x:Name="_Gain" Grid.Row="4" Grid.Column="2"
                 Style="{StaticResource ComboBoxFlatStyle}"
                 Width="90"
@@ -106,7 +108,8 @@
                 ItemsSource="{Binding Path=GainOptions}" 
                 DisplayMemberPath="DisplayName"
                 IsEnabled="{Binding Path=IsEnabledControl}"/>
-            <ComboBox x:Name="_Readout" Grid.Row="6" Grid.Column="2"
+            <!--IsEnabled="False"/>-->
+            <!--<ComboBox x:Name="_Readout" Grid.Row="6" Grid.Column="2"
                 Style="{StaticResource ComboBoxFlatStyle}"
                 Width="245"
                 Height="25"
@@ -116,10 +119,10 @@
                 SelectedItem="{Binding Path=SelectedReadout}"
                 ItemsSource="{Binding Path=ReadoutOptions}" 
                 DisplayMemberPath="DisplayName"
-                IsEnabled="{Binding Path=IsEnabledControl}" />
+                IsEnabled="False" />-->
         </Grid>
-        
-        <Grid Grid.Row="2" Margin="4,1">
+
+        <!--<Grid Grid.Row="2" Margin="4,1" IsEnabled="False">
             <StackPanel Orientation="Horizontal">
                 <Label Content="Dark Frame Correction: " Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <ComboBox x:Name="_DarkFrameCorr"
@@ -135,8 +138,8 @@
                     DisplayMemberPath="Value"
                     IsEnabled="{Binding Path=IsEnabledControl}"/>
             </StackPanel>
-        </Grid>
-        
+        </Grid>-->
+
         <!--ROI-->
         <Grid Grid.Row="4" Margin="4,1">
             <Grid.ColumnDefinitions>
@@ -208,16 +211,16 @@
             <Button x:Name="_ResetRoi" Grid.Row="4" Grid.Column="6"
                 Content="Reset ROI"
                 Style="{DynamicResource BlueButton}"
-                Width="75"
+                Width="97"
                 Height="30"
                 FontSize="14"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Margin="1"
+                Margin="0,1,-1,1"
                 IsEnabled="{Binding Path=IsEnabledControl}"
                 Command="{Binding Path=ResetRoiCommand}" />
         </Grid>
-        
+
         <!--CCD Temp-->
         <Grid Grid.Row="6" Margin="4,1">
             <Grid.ColumnDefinitions>
@@ -231,7 +234,7 @@
                 <ColumnDefinition Width="4" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            
+
             <TextBox x:Name="_SetTempTextBox" Grid.Column="0"
                 Width="58"
                 Height="25"
@@ -254,7 +257,7 @@
                 IsEnabled="{Binding Path=IsEnabledControl}"
                 Command="{Binding Path=SetCcdTempCommand}" />
             <Label Grid.Column="4" Content="CCD Temp" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-            <Button x:Name="_ReadCcdTempBtn" Grid.Column="6"
+            <Button x:Name="_ReadCcdTempBtn" Grid.Column="6" Visibility="Hidden"
                 Content="Read"
                 Style="{DynamicResource BlueButton}"
                 Width="60"
@@ -265,7 +268,7 @@
                 Margin="1"
                 IsEnabled="{Binding Path=IsEnabledControl}"
                 Command="{Binding Path=ReadCcdTempCommand}" />
-            <TextBox x:Name="_ReadCcdTempTextBox" Grid.Column="8"
+            <TextBox x:Name="_ReadCcdTempTextBox" Grid.Column="6"
                 Width="58"
                 Height="25"
                 FontSize="14"
@@ -313,7 +316,7 @@
             </StackPanel>
         </Grid>
 
-        <Grid  Grid.Row="10" Margin="4,1">
+        <Grid  Grid.Row="10" Margin="4,1" IsEnabled="False">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="4" />
@@ -462,7 +465,7 @@
                 <ColumnDefinition Width="8" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            
+
             <Grid Grid.Column="0">
                 <Button Grid.Column="0" x:Name="_CaptureButton"
                     Content="CAPTURE"
@@ -521,7 +524,7 @@
 
             <Grid Grid.Column="2">
                 <Button Grid.Column="0" x:Name="_ContinuousButton"
-                    Content="CONTINUOUS"
+                    Content="LIVE"
                     Width="100"
                     Height="30"
                     FontSize="14"
@@ -576,6 +579,6 @@
             </Grid>
 
         </Grid>
-            
-        </Grid>
+
+    </Grid>
 </UserControl>

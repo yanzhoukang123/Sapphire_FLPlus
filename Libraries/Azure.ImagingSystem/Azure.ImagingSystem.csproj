@@ -78,8 +78,12 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CameraModeSettings.cs" />
     <Compile Include="ConfigSettings.cs" />
+    <Compile Include="ImageCaptureCommand.cs" />
+    <Compile Include="ImageChannelSettings.cs" />
     <Compile Include="ImagingHelper.cs" />
+    <Compile Include="ImagingLiveCommand.cs" />
     <Compile Include="ImagingSettings.cs" />
     <Compile Include="LaserModule.cs" />
     <Compile Include="LaserScanCommand.cs" />
@@ -90,6 +94,10 @@
     <Compile Include="XMotorSpeedCalibration.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Azure.CameraLib\Azure.CameraLib.csproj">
+      <Project>{6c8a9bb5-587f-438b-a0f7-f0b6c8f1e5b0}</Project>
+      <Name>Azure.CameraLib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Azure.CommandLib\Azure.CommandLib.csproj">
       <Project>{7bbed9a3-66b6-4dc5-b7cb-349136274220}</Project>
       <Name>Azure.CommandLib</Name>

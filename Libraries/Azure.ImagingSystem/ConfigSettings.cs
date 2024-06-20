@@ -13,6 +13,10 @@ namespace Azure.Configuration
         public class ConfigSettings
         {
             #region Private data...
+            private ObservableCollection<BinningFactorType> _BinningFactorOptions = new ObservableCollection<BinningFactorType>();
+            private ObservableCollection<GainType> _GainOptions = new ObservableCollection<GainType>();
+            private List<RgbLedIntensity> _RgbLedIntensities = new List<RgbLedIntensity>();
+            private CameraModeSetting _CameraModeSettings = new CameraModeSetting();
 
             private List<ResolutionType> _ResolutionOptions = new List<ResolutionType>();
             private List<QualityType> _QualityOptions = new List<QualityType>();
@@ -347,9 +351,26 @@ namespace Azure.Configuration
             public bool IsChemiModule { get; set; } = false;
 
             public bool IsIgnoreCompCoefficient {  get; set; } = false;
-
+            #region Chemi
+            public ObservableCollection<BinningFactorType> BinningFactorOptions
+            {
+                get { return _BinningFactorOptions; }
+            }
+            public ObservableCollection<GainType> GainOptions
+            {
+                get { return _GainOptions; }
+            }
+            public List<RgbLedIntensity> RgbLedIntensities
+            {
+                get { return _RgbLedIntensities; }
+            }
+            public CameraModeSetting CameraModeSettings
+            {
+                get { return _CameraModeSettings; }
+            }
             #endregion
-        } 
+            #endregion
+        }
 
     }
 

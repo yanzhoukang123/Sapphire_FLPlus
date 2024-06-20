@@ -99,7 +99,7 @@ namespace Azure.ScannerEUI
             }
             #endregion
 
-            this.Title = string.Format("Avocado Captrue V{0}", Workspace.This.ProductVersion);
+            this.Title = string.Format("Avocado Captrue Plus V{0}", Workspace.This.ProductVersion);
             DataContext = Workspace.This;
             Workspace.This.Owner = this;
             Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
@@ -109,6 +109,8 @@ namespace Azure.ScannerEUI
                                                   version.Build,
                                                   version.Revision.ToString("D4"));
 
+            Workspace.This.LoadMasterLibraryInfo(SettingsManager.ApplicationDataPath);    // Load masterlibrary
+            Workspace.This.LoggerSetup();
             // Override the default path specified in 'log4net.config'
             log4net.ILog log4 = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
             Log.log4 = log4;

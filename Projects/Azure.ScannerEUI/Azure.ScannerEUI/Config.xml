@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Config>
+
   <IsSimulationMode Value="false" />
   <IsApplyImageSmoothing Value="false" />
   <IsChannelALightShadeFix Value="false" />
@@ -44,10 +45,10 @@
   </ScanSpeeds>
 
   <MotorParameters>
-    <!-- Plus 570mm -->
+    <!-- Plus 45833 570mm -->
     <MotorParameter Name="Plus_XMaxValue" Value="79167"/>
-    <!-- 330mm-->
-    <MotorParameter Name="XMaxValue" Value="45833"/>
+    <!--45833 330mm-->
+    <MotorParameter Name="XMaxValue" Value="79167"/>
     <MotorParameter Name="YMaxValue" Value="432000"/>
     <MotorParameter Name="ZMaxValue" Value="8819"/>
     <MotorParameter Name="WMaxValue" Value="28000"/>
@@ -166,11 +167,11 @@
     <PowersSetting Name="OldPower" Value="20" />
   </OldPowersSetting>
 
-   <!--<RadiatorTemperatures>-->
-    <!--<RadiatorTemperature Name="RadiatorL" Value="25"/>-->
-    <!--<RadiatorTemperature Name="RadiatorR1" Value="25"/>-->
-    <!--<RadiatorTemperature Name="RadiatorR2" Value="25"/>-->
-   <!--</RadiatorTemperatures>-->
+  <!--<RadiatorTemperatures>-->
+  <!--<RadiatorTemperature Name="RadiatorL" Value="25"/>-->
+  <!--<RadiatorTemperature Name="RadiatorR1" Value="25"/>-->
+  <!--<RadiatorTemperature Name="RadiatorR2" Value="25"/>-->
+  <!--</RadiatorTemperatures>-->
 
   <PhosphorLaserModules>
     <LaserModule LaserNumber="638" />
@@ -317,6 +318,64 @@
     <!--<ShellFanModule ShellFan="ModuleModerateTemperature" Value="5"/>-->
     <!--<ShellFanModule ShellFan="ModuleHighTemperature" Value="7"/>-->
   </ShellFanModules>
-  
+
+
+  <BinFactors>
+    <BinFactor Position="1" VerticalBins="1" HorizontalBins="1" DisplayName="1x1" />
+    <BinFactor Position="2" VerticalBins="2" HorizontalBins="2" DisplayName="2x2" />
+    <BinFactor Position="3" VerticalBins="3" HorizontalBins="3" DisplayName="3x3" />
+    <BinFactor Position="4" VerticalBins="4" HorizontalBins="4" DisplayName="4x4" />
+  </BinFactors>
+
+
+  <Gains>
+    <Gain Position="1" Value="100" DisplayName="100" />
+    <Gain Position="2" Value="200" DisplayName="200" />
+    <Gain Position="3" Value="300" DisplayName="300" />
+    <Gain Position="4" Value="400" DisplayName="400" />
+    <Gain Position="5" Value="500" DisplayName="500" />
+  </Gains>
+
+  <RgbIntensities>
+    <RgbIntensity Position="1" Intensity="65535" DisplayName="Red" />
+    <RgbIntensity Position="2" Intensity="65535" DisplayName="Green" />
+    <RgbIntensity Position="3" Intensity="65535" DisplayName="Blue" />
+  </RgbIntensities>
+
+  <CameraSetting>
+    <AbsXPos>570</AbsXPos>
+    <AbsYPos>270</AbsYPos>
+  </CameraSetting>
+
+  <ChemiSOLOSettings>
+    <NumFrames>10</NumFrames>
+    <Gain>300</Gain>
+    <RGBImageGain>1</RGBImageGain>
+    <ChemiImageGain>100</ChemiImageGain>
+    <FlatsAutoExposureOptimal>13749</FlatsAutoExposureOptimal>
+    <RapidCapture>16250</RapidCapture>
+    <DynamicRange>12500</DynamicRange>
+    <OverExposeure>12500</OverExposeure>
+    <IsDynamicDarkCorrection>False</IsDynamicDarkCorrection>
+    <MaxExposure>1800</MaxExposure>
+    <InitialExposureTime>0.05</InitialExposureTime>
+    <ChemiInitialExposureTime>10</ChemiInitialExposureTime>
+    <Chemi_NewAlgo_Enable>1</Chemi_NewAlgo_Enable>
+    <Chemi_T1>1</Chemi_T1>
+    <Chemi_binning_Kxk>10,3,1</Chemi_binning_Kxk>
+    <Chemi_Intensity>75</Chemi_Intensity>
+    <Dark_GlowCorrection>True</Dark_GlowCorrection>
+    <LineCorrection>True</LineCorrection>
+    <DespecklerCorrection>True</DespecklerCorrection>
+    <FlatfieldCorrection>True</FlatfieldCorrection>
+    <LensDistortionCorrection>True</LensDistortionCorrection>
+    <ParamA>0.0</ParamA>
+    <ParamB>0.020</ParamB>
+    <ParamC>0.0</ParamC>
+    <BlotFindExposureTime>10</BlotFindExposureTime>
+    <SampleType_threshold>80</SampleType_threshold>
+    <BlotPvCamScalingThreshold>12500</BlotPvCamScalingThreshold>
+    <GelPvCamScalingThreshold>10000</GelPvCamScalingThreshold>
+  </ChemiSOLOSettings>
 
 </Config>

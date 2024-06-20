@@ -1,0 +1,202 @@
+﻿<UserControl x:Class="Azure.ScannerEUI.View.ChemiSOLOView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Azure.ScannerEUI.View"
+             mc:Ignorable="d" 
+              d:DesignHeight="480"
+             d:DesignWidth="380">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Azure.ScannerEUI;component/Resources/AllResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="MyLabelHeaderStyle" TargetType="{x:Type Label}">
+                <Setter Property="Foreground" Value="DarkBlue" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="124"/>
+            <ColumnDefinition Width="250"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="45"/>
+            <RowDefinition Height="32"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="31"/>
+            <RowDefinition Height="34"/>
+            <RowDefinition Height="38"/>
+            <RowDefinition Height="170"/>
+            <RowDefinition Height="95"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Grid.Column="0">
+            <Label Grid.Row="0" Grid.Column="0" Content="Application:" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+        <Grid Grid.Row="0" Grid.Column="1">
+            <ComboBox x:Name="_application" Grid.Row="2" Grid.Column="2"
+                Style="{StaticResource ComboBoxFlatStyle}"
+                Width="190"
+                Height="25"
+                FontSize="14"
+                FontWeight="SemiBold"
+                HorizontalAlignment="Left"
+                SelectedItem="{Binding Path=SelectedApplication}"
+                ItemsSource="{Binding Path=ApplicationOptions}"
+                DisplayMemberPath="DisplayName"/>
+        </Grid>
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Label Grid.Row="0" Grid.Column="0" Content="Sample:" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+        <Grid Grid.Row="1" Grid.Column="1">
+            <ComboBox x:Name="_sample" Grid.Row="2" Grid.Column="2"
+                Style="{StaticResource ComboBoxFlatStyle}"
+                Width="190"
+                Height="25"
+                FontSize="14"
+                FontWeight="SemiBold"
+                HorizontalAlignment="Left"
+                SelectedItem="{Binding Path=SelectedSample}"
+                ItemsSource="{Binding Path=SampleOptions}"
+                DisplayMemberPath="DisplayName"/>
+        </Grid>
+        <Grid Grid.Row="2" Grid.Column="0">
+            <Label Grid.Row="0" Grid.Column="0" Content="Pixel Binning:" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+        <Grid Grid.Row="2" Grid.Column="1">
+            <ComboBox x:Name="_BinningMode" Grid.Row="2" Grid.Column="2"
+                Style="{StaticResource ComboBoxFlatStyle}"
+                Width="190"
+                Height="25"
+                FontSize="14"
+                FontWeight="SemiBold"
+                HorizontalAlignment="Left"
+                SelectedItem="{Binding Path=SelectedBinning}"
+                ItemsSource="{Binding Path=BinningOptions}"
+                DisplayMemberPath="DisplayName"/>
+        </Grid>
+        <Grid Grid.Row="3" Grid.Column="0">
+            <Label Grid.Row="0" Grid.Column="0" Content="Maker:" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   IsEnabled="{Binding Path=IsEnabledControl}"/>
+        </Grid>
+        <Grid Grid.Row="3" Grid.Column="1">
+            <ComboBox x:Name="_Maker" Grid.Row="2" Grid.Column="2"
+                Style="{StaticResource ComboBoxFlatStyle}"
+                Width="190"
+                Height="25"
+                FontSize="14"
+                FontWeight="SemiBold"
+                HorizontalAlignment="Left"
+                SelectedItem="{Binding Path=SelectedMaker}"
+                ItemsSource="{Binding Path=MakerOptions}"
+                DisplayMemberPath="DisplayName"
+                IsEnabled="{Binding Path=IsEnabledControl}"/>
+        </Grid>
+        <Grid Grid.Row="4" Grid.Column="0">
+            <Label Grid.Row="0" Grid.Column="0" Content="Exposure Type:" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   IsEnabled="{Binding Path=IsEnabledControl}"/>
+        </Grid>
+        <Grid Grid.Row="4" Grid.Column="1">
+            <ComboBox x:Name="_ExposureType" Grid.Row="2" Grid.Column="2"
+                Style="{StaticResource ComboBoxFlatStyle}"
+                Width="190"
+                Height="25"
+                FontSize="14"
+                FontWeight="SemiBold"
+                HorizontalAlignment="Left"
+                SelectedItem="{Binding Path=SelectedExposureType}"
+                ItemsSource="{Binding Path=ExposureTypeOptions}"
+                DisplayMemberPath="DisplayName"
+                IsEnabled="{Binding Path=IsEnabledControl}"/>
+        </Grid>
+        <Grid Grid.Row="5" Grid.Column="0">
+            <Label Grid.Row="0" Grid.Column="0" Content="Imaging Mode:" Style="{StaticResource MyLabelHeaderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   IsEnabled="{Binding Path=IsEnabledControl}"/>
+        </Grid>
+        <Grid Grid.Row="5" Grid.Column="1">
+            <ComboBox x:Name="_ImagingMode" Grid.Row="2" Grid.Column="2"
+                Style="{StaticResource ComboBoxFlatStyle}"
+                Width="190"
+                Height="25"
+                FontSize="14"
+                FontWeight="SemiBold"
+                HorizontalAlignment="Left"
+                SelectedItem="{Binding Path=SelectedImagingMode}"
+                ItemsSource="{Binding Path=ImagingModeOptions}"
+                DisplayMemberPath="DisplayName"
+                IsEnabled="{Binding Path=IsEnabledControl}"/>
+        </Grid>
+        <Grid Grid.Row="6" Grid.Column="1" IsEnabled="{Binding Path=IsEnabledControl}">
+            <Grid Visibility="{Binding Path=IsMultipleExposure}" Margin="0,20,0,0">
+                <local:MultipleExposureControl></local:MultipleExposureControl>
+            </Grid>
+            <Grid Visibility="{Binding Path=IsExposure}" Margin="0,20,0,0">
+                <local:ExposureControl></local:ExposureControl>
+            </Grid>
+            <Grid Visibility="{Binding Path=IsEDR}" Margin="0,20,0,0">
+                <local:EDRSettings></local:EDRSettings>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="7" Grid.Column="1">
+            <Grid Grid.Column="0">
+                <Button Grid.Column="0" x:Name="_CaptureButton"
+                    Content="START"
+                    Width="100"
+                    Height="30"
+                    FontSize="14"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    ToolTip="Start image acquisition"
+                    Command="{Binding Path=StartCaptureCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource BlueButton}">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger
+                            Value="True"
+                            Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.IsCapturing}">
+                                    <DataTrigger.Setters>
+                                        <Setter Property="Visibility" Value="Hidden"/>
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Grid.Column="0" x:Name="_StopCaptureButton"
+                    Content="STOP"
+                    Width="100"
+                    Height="30"
+                    FontSize="14"
+                    Foreground="Red"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    ToolTip="Stop image acquisition"
+                    Command="{Binding Path=StopCaptureCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource BlueButton}">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger
+                            Value="False"
+                            Binding="{Binding Path=DataContext.IsCapturing, RelativeSource={RelativeSource FindAncestor, AncestorType=Window, AncestorLevel=1}}">
+                                    <DataTrigger.Setters>
+                                        <Setter Property="Visibility" Value="Hidden"/>
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

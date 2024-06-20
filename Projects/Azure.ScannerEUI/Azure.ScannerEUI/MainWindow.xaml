@@ -67,7 +67,7 @@
                             <local:ImagingViewer />
                         </Border>
                     </TabItem>
-                    <TabItem Header="ScanChart" >
+                    <TabItem Header="ScanChart"  IsEnabled="{Binding Path=IsScanner_Mode,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}">
                         <Border x:Name="ScanChartContainer" Grid.Row="0" Grid.Column="0">
                             <local:ScanDynamicChart />
                         </Border>
@@ -99,6 +99,7 @@
                                 VerticalAlignment="Top"
                                 Visibility="{Binding Path=IsImagingMode, Converter={StaticResource boolToVisibilityConverter}}"
                                 IsEnabled="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.MotorIsAlive}"/>
+                            <Grid Visibility="{Binding IsScanner_Mode}">
                             <local:ScanWorkUserControl x:Name="_ScannerWorkPanel"
                                 Margin="0,30,0,0"
                                 BorderThickness="0.5"
@@ -106,6 +107,7 @@
                                 VerticalAlignment="Top"
                                 Opacity="1"
                                 Visibility="{Binding Path=IsImagingMode, Converter={StaticResource boolToVisibilityConverter}}" />
+                            </Grid>
                         </StackPanel>
                     </ScrollViewer>
 
@@ -163,7 +165,7 @@
                             <local:DoorStatusControl/>
                         </StackPanel>
                         <StackPanel Orientation="Vertical">
-                            <local:UsScanContorlSpentTimeAndRemaining IsEnabled="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.ScanIsAlive}"/>
+                            <local:UsScanContorlSpentTimeAndRemaining Visibility="{Binding IsScanner_Mode}" IsEnabled="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.ScanIsAlive}"/>
                             <local:DisconnectDevice HorizontalAlignment="Right"></local:DisconnectDevice >
                         </StackPanel>
                     </StackPanel>

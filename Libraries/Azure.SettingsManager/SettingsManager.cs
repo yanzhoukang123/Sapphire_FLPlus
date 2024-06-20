@@ -1487,6 +1487,245 @@ namespace Azure.Configuration
                         configSettings.ModuleHighTemperature = delay;
                     }
                 }
+                #region Chemi
+                iter = xpathNav.Select("/Config/BinFactors/BinFactor");
+                while (iter.MoveNext())
+                {
+                    XPathNavigator nav = iter.Current;
+                    BinningFactorType binningItem = new BinningFactorType();
+                    binningItem.Position = int.Parse(nav.GetAttribute("Position", ""));
+                    binningItem.HorizontalBins = int.Parse(nav.GetAttribute("HorizontalBins", ""));
+                    binningItem.VerticalBins = int.Parse(nav.GetAttribute("VerticalBins", ""));
+                    binningItem.DisplayName = nav.GetAttribute("DisplayName", "");
+                    configSettings.BinningFactorOptions.Add(binningItem);
+                }
+                iter = xpathNav.Select("/Config/Gains/Gain");
+                while (iter.MoveNext())
+                {
+                    XPathNavigator nav = iter.Current;
+                    GainType gainItem = new GainType();
+                    gainItem.Position = int.Parse(nav.GetAttribute("Position", ""));
+                    gainItem.Value = int.Parse(nav.GetAttribute("Value", ""));
+                    gainItem.DisplayName = nav.GetAttribute("DisplayName", "");
+                    configSettings.GainOptions.Add(gainItem);
+                }
+
+                iter = xpathNav.Select("/Config/RgbIntensities/RgbIntensity");
+                while (iter.MoveNext())
+                {
+                    XPathNavigator nav = iter.Current;
+                    RgbLedIntensity rgbLedIntensity = new RgbLedIntensity();
+                    rgbLedIntensity.Position = int.Parse(nav.GetAttribute("Position", ""));
+                    rgbLedIntensity.Intensity = int.Parse(nav.GetAttribute("Intensity", ""));
+                    rgbLedIntensity.DisplayName = nav.GetAttribute("DisplayName", "");
+                    configSettings.RgbLedIntensities.Add(rgbLedIntensity);
+                }
+
+                iter = xpathNav.Select("/Config/CameraSetting");
+                if (iter != null)
+                {
+                    while (iter.MoveNext())
+                    {
+                        XPathNavigator nav = iter.Current;
+                        var selectedNode = nav.SelectSingleNode("AbsXPos");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.CameraSettings.AbsXPos = double.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("AbsYPos");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.CameraSettings.AbsYPos = double.Parse(selectedNode.Value);
+                        }
+                    }
+                }
+
+                iter = xpathNav.Select("/Config/ChemiSOLOSettings");
+                if (iter != null)
+                {
+                    while (iter.MoveNext())
+                    {
+                        XPathNavigator nav = iter.Current;
+                        var selectedNode = nav.SelectSingleNode("NumFrames");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.NumFrames = int.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("Gain");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.Gain = int.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("FlatsAutoExposureOptimal");
+                        int flatsAutoOptiVal;
+                        if (!int.TryParse(selectedNode.Value, out flatsAutoOptiVal))
+                        {
+                            flatsAutoOptiVal = 40000;
+                        }
+                        ConfigSettings.CameraModeSettings.ChemiSettings.FlatsAutoExposureOptimal = flatsAutoOptiVal;
+                        selectedNode = nav.SelectSingleNode("IsDynamicDarkCorrection");
+                        bool flag;
+                        string ddfcValue = selectedNode.Value;
+                        if (!Boolean.TryParse(ddfcValue, out flag))
+                        {
+                            flag = false;
+                        }
+                        ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection = flag;
+                        selectedNode = nav.SelectSingleNode("MaxExposure");
+                        if (selectedNode != null)
+                        {
+                            double maxExposure;
+                            if (!Double.TryParse(selectedNode.Value, out maxExposure))
+                            {
+                                maxExposure = 1800.0d;
+                            }
+                            ConfigSettings.CameraModeSettings.ChemiSettings.MaxExposure = maxExposure;
+                        }
+
+                        selectedNode = nav.SelectSingleNode("RGBImageGain");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.RGBImageGain = int.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("ChemiImageGain");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.ChemiImageGain = int.Parse(selectedNode.Value);
+                        }
+
+                        selectedNode = nav.SelectSingleNode("RapidCapture");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.RapidCapture = int.Parse(selectedNode.Value);
+                        }
+
+                        selectedNode = nav.SelectSingleNode("DynamicRange");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.DynamicRange = int.Parse(selectedNode.Value);
+                        }
+
+                        selectedNode = nav.SelectSingleNode("OverExposeure");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.OverExposeure = int.Parse(selectedNode.Value);
+                        }
+
+                        selectedNode = nav.SelectSingleNode("InitialExposureTime");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.InitialExposureTime = double.Parse(selectedNode.Value);
+                        }
+
+                        selectedNode = nav.SelectSingleNode("ChemiInitialExposureTime");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.ChemiInitialExposureTime = double.Parse(selectedNode.Value);
+                        }
+
+                        selectedNode = nav.SelectSingleNode("Chemi_NewAlgo_Enable");
+                        ddfcValue = selectedNode.Value;
+                        if (!Boolean.TryParse(ddfcValue, out flag))
+                        {
+                            flag = false;
+                        }
+                        ConfigSettings.CameraModeSettings.ChemiSettings.Chemi_NewAlgo_Enable = flag;
+
+                        selectedNode = nav.SelectSingleNode("Chemi_T1");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.Chemi_T1 = double.Parse(selectedNode.Value);
+                        }
+
+                        selectedNode = nav.SelectSingleNode("Chemi_binning_Kxk");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.Chemi_binning_Kxk = selectedNode.Value;
+                        }
+                        selectedNode = nav.SelectSingleNode("Chemi_Intensity");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.Chemi_Intensity = int.Parse(selectedNode.Value);
+                        }
+
+                        selectedNode = nav.SelectSingleNode("Dark_GlowCorrection");
+                        ddfcValue = selectedNode.Value;
+                        if (!Boolean.TryParse(ddfcValue, out flag))
+                        {
+                            flag = false;
+                        }
+                        ConfigSettings.CameraModeSettings.ChemiSettings.Dark_GlowCorrection = flag;
+
+                        selectedNode = nav.SelectSingleNode("LineCorrection");
+                        ddfcValue = selectedNode.Value;
+                        if (!Boolean.TryParse(ddfcValue, out flag))
+                        {
+                            flag = false;
+                        }
+                        ConfigSettings.CameraModeSettings.ChemiSettings.LineCorrection = flag;
+
+                        selectedNode = nav.SelectSingleNode("DespecklerCorrection");
+                        ddfcValue = selectedNode.Value;
+                        if (!Boolean.TryParse(ddfcValue, out flag))
+                        {
+                            flag = false;
+                        }
+                        ConfigSettings.CameraModeSettings.ChemiSettings.DespecklerCorrection = flag;
+
+                        selectedNode = nav.SelectSingleNode("FlatfieldCorrection");
+                        ddfcValue = selectedNode.Value;
+                        if (!Boolean.TryParse(ddfcValue, out flag))
+                        {
+                            flag = false;
+                        }
+                        ConfigSettings.CameraModeSettings.ChemiSettings.FlatfieldCorrection = flag;
+
+                        selectedNode = nav.SelectSingleNode("LensDistortionCorrection");
+                        ddfcValue = selectedNode.Value;
+                        if (!Boolean.TryParse(ddfcValue, out flag))
+                        {
+                            flag = false;
+                        }
+                        ConfigSettings.CameraModeSettings.ChemiSettings.LensDistortionCorrection = flag;
+
+                        selectedNode = nav.SelectSingleNode("ParamA");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.paramA = double.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("ParamB");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.paramB = double.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("ParamC");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.paramC = double.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("BlotFindExposureTime");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.BlotFindExposureTime = double.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("SampleType_threshold");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.SampleType_threshold = double.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("BlotPvCamScalingThreshold");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.BlotPvCamScalingThreshold = int.Parse(selectedNode.Value);
+                        }
+                        selectedNode = nav.SelectSingleNode("GelPvCamScalingThreshold");
+                        if (selectedNode != null)
+                        {
+                            ConfigSettings.CameraModeSettings.ChemiSettings.GelPvCamScalingThreshold = int.Parse(selectedNode.Value);
+                        }
+                    }
+                }
+                #endregion
                 xpathNav = null;
                 xpathDoc = null;
             }
@@ -1605,7 +1844,6 @@ namespace Azure.Configuration
                         //filterType.Bandpass = nBandpass;
                         configSettings.FilterOptions.Add(filterType);
                     }
-
                     //iter = xpathNav.Select("/SysSettings/LaserTypes/LaserType");
                     //while (iter.MoveNext())
                     //{

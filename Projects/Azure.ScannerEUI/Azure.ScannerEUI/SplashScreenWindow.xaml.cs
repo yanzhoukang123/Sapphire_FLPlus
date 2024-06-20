@@ -24,7 +24,7 @@ namespace Azure.ScannerEUI
         public SplashScreenWindow()
         {
             InitializeComponent();
-            this.Title = string.Format("Avocado Captrue V{0}", Workspace.This.ProductVersion);
+            this.Title = string.Format("Avocado Captrue Plus V{0}", Workspace.This.ProductVersion);
         }
         public void SetProgressValue(double value)
         {

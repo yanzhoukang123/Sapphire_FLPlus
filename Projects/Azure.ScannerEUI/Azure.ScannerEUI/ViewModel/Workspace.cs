@@ -53,6 +53,8 @@ using Azure.Configuration.Settings;
 using Azure.ScannerEUI.View;
 using Azure.EthernetCommLib;
 using LogW;
+using Azure.CameraLib;
+using Azure.ScannerEUI.SystemCommand;
 
 namespace Azure.ScannerEUI.ViewModel
 {
@@ -151,9 +153,19 @@ namespace Azure.ScannerEUI.ViewModel
         private TransportLockViewModel _TransportLockViewModel = null;
         private ZAutomaticallyFocalViewModel _ZAutomaticallyFocal = null;
         private ImageRotatingPrcessViewModel _ImageRotatingPrcess = null;
+        private CameraModeViewModel _CameraModeViewModel=null;
+        private CreateDarkmastersViewModel _CreateDarkmastersViewModel = null;
+        private CreateFlatsViewModel _CreateFlatsViewModel = null;
         private bool _IsAuthenticated = false;
         private Visibility _WorkIndexTitleVisBility = Visibility.Hidden;
-        private EthernetController _EthernetController;
+        private EthernetController _EthernetController=null;
+        private CameraController _CameraController=null;
+        private MasterLibrary _MasterLibrary = null;    // Darkmaster library and flat field image
+        private ChemiSOLOViewModel _ChemiSOLOViewModel = null;
+        private MultipleExposureViewModel _MultipleExposureViewModel = null;
+        private ManualExposureViewModel _ManualExposureViewModel = null;
+        protected Logger _Logger = null;
+        protected string _LogFilePath;
         private double _EthernetTransactionRate;
         private bool _ScanIsAlive = false;
         //（HW Version 1.1.0.0） If the firmware version is 1.1, the added UI for "Optical Module Power Down Button", "Top Cover Lock Status", "Top Cover Magnet Status", and "Optical Module Power Status" will be displayed, while the UI for "Optical Module Power Status" will be hidden
@@ -208,6 +220,13 @@ namespace Azure.ScannerEUI.ViewModel
             _TransportLockViewModel = new TransportLockViewModel();
             _ZAutomaticallyFocal = new ZAutomaticallyFocalViewModel();
             _ImageRotatingPrcess = new ImageRotatingPrcessViewModel();
+            _CameraController = new CameraController();
+            _CameraModeViewModel = new CameraModeViewModel();
+            _CreateDarkmastersViewModel = new CreateDarkmastersViewModel();
+            _CreateFlatsViewModel = new CreateFlatsViewModel();
+            _ChemiSOLOViewModel = new ChemiSOLOViewModel();
+            _MultipleExposureViewModel = new MultipleExposureViewModel();
+            _ManualExposureViewModel = new ManualExposureViewModel();
             // image capturing status
             _DispatcherTimer.Tick += new EventHandler(_DispatcherTimer_Tick);
             _DispatcherTimer.Interval = new TimeSpan(0, 0, 1);
@@ -320,6 +339,7 @@ namespace Azure.ScannerEUI.ViewModel
         public MainWindow Owner { get; set; }
         public string CompanyName { get; set; }
         public string ProductName { get; set; }
+        public string AppDataPath { get; set; }
         public string ProductVersion { get; set; }
 
         public bool MotorIsAlive
@@ -356,6 +376,74 @@ namespace Azure.ScannerEUI.ViewModel
                 }
             }
         }
+        #region Camera
+        private Visibility _IsScanner_Mode = Visibility.Visible;
+        private Visibility _IsCamera_Mode = Visibility.Hidden;
+        private double _ScannerModelWindowWidth = 630;
+        private bool _IsMotorEnabled = true;
+        private bool _IsAgingEnabled = true;
+
+        public double ScannerModelWindowWidth
+        {
+            get
+            {
+                return _ScannerModelWindowWidth;
+            }
+            set
+            {
+                if (_ScannerModelWindowWidth != value)
+                {
+                    _ScannerModelWindowWidth = value;
+                    RaisePropertyChanged("ScannerModelWindowWidth");
+                }
+            }
+        }
+        public Visibility IsScanner_Mode
+        {
+            get
+            {
+                return _IsScanner_Mode;
+            }
+            set
+            {
+                if (_IsScanner_Mode != value)
+                {
+                    _IsScanner_Mode = value;
+                    RaisePropertyChanged("IsScanner_Mode");
+                }
+            }
+        }
+        public Visibility IsCamera_Mode
+        {
+            get
+            {
+                return _IsCamera_Mode;
+            }
+            set
+            {
+                if (_IsCamera_Mode != value)
+                {
+                    _IsCamera_Mode = value;
+                    RaisePropertyChanged("IsCamera_Mode");
+                }
+            }
+        }
+        public bool IsMotorEnabled
+        {
+            get
+            {
+                return _IsMotorEnabled;
+            }
+            set
+            {
+                if (_IsMotorEnabled != value)
+                {
+                    _IsMotorEnabled = value;
+                    RaisePropertyChanged("IsMotorEnabled");
+                }
+            }
+        }
+        #endregion
 
         #region RGB Light Control
         public bool IsRGBLightSelected
@@ -6507,7 +6595,14 @@ namespace Azure.ScannerEUI.ViewModel
         {
             get { return _EthernetController; }
         }
-
+        internal CameraController CameraController
+        {
+            get { return _CameraController; }
+        }
+        public MasterLibrary MasterLibrary
+        {
+            get { return _MasterLibrary; }
+        }
         /// <summary>
         /// Generate default file name using timestamp (default file type is: .TIFF)
         /// </summary>
@@ -6574,6 +6669,88 @@ namespace Azure.ScannerEUI.ViewModel
                 strFileName = string.Format("{0}-{1:D2}{2:D2}-{3:D2}{4:D2}{5:D2}", dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
             }
             */
+
+            switch (fileType.ToLower())
+            {
+                case ".tif":
+                    strFileName = strFileName + ".tif";
+                    break;
+                case ".jpg":
+                    strFileName = strFileName + ".jpg";
+                    break;
+                case ".bmp":
+                    strFileName = strFileName + ".bmp";
+                    break;
+            }
+
+            return strFileName;
+        }
+
+        /// <summary>
+        /// Generate default file name using timestamp (default file type is: .TIFF)
+        /// </summary>
+        /// <param name="headerTitle"></param>
+        /// <param name="fileType"></param>
+        /// <returns></returns>
+        internal string GenerateChemiSOLOFileName(string headerTitle, string fileType = ".tif")
+        {
+            string strFileName = string.Empty;
+            string strFileFullPath = string.Empty;
+            int[] intArray = null;
+            bool bIsFramePartOfSet = false;
+            bool bIsScannedSet = false;
+            string filePrefix = string.Empty;
+
+            //
+            // Get set and frame number
+            //
+            if (Regex.IsMatch(headerTitle, @"-F\d"))
+            {
+                bIsFramePartOfSet = true;
+
+                // Split on one or more non-digit characters.
+                string[] numbers = Regex.Split(headerTitle, @"\D+");
+                intArray = new int[numbers.Count()];
+                int setIndex = 0;
+                for (int index = 0; index < numbers.Count(); index++)
+                {
+                    if (!string.IsNullOrEmpty(numbers[index]))
+                    {
+                        int number = int.Parse(numbers[index]);
+                        if (number > 0)
+                        {
+                            intArray[setIndex++] = number;
+                        }
+                    }
+                }
+            }
+            else if (Regex.IsMatch(headerTitle, @"-S\d"))
+            {
+                bIsScannedSet = true;
+            }
+
+            //
+            // Generate default image name using timestamp
+            //
+            DateTime dt = DateTime.Now;
+
+            if (bIsFramePartOfSet || bIsScannedSet)
+            {
+                if (bIsFramePartOfSet)
+                {
+                    strFileName = string.Format("{0}.{1:D2}.{2:D2}_{3:D2}.{4:D2}.{5:D2}", dt.ToString("yy"), dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
+                    strFileName = string.Format("{0}_S{1}_F{2}", strFileName, intArray[0], intArray[1]);
+                }
+                else if (bIsScannedSet)
+                {
+                    string timeStamp = string.Format("{0:D2}{1:D2}-{2:D2}{3:D2}{4:D2}", dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
+                    strFileName = string.Format("{0}_{1}", headerTitle, timeStamp);
+                }
+            }
+            else
+            {
+                strFileName = string.Format("{0}.{1:D2}.{2:D2}_{3:D2}.{4:D2}.{5:D2}", dt.ToString("yy"), dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
+            }
 
             switch (fileType.ToLower())
             {
@@ -6998,6 +7175,31 @@ namespace Azure.ScannerEUI.ViewModel
         {
             get { return _ImageRotatingPrcess; }
         }
+        public CameraModeViewModel CameraModeViewModel
+        {
+            get { return _CameraModeViewModel; }
+        }
+        public CreateDarkmastersViewModel CreateDarkmastersViewModel
+        {
+            get { return _CreateDarkmastersViewModel; }
+        }
+        public CreateFlatsViewModel CreateFlatsViewModel
+        {
+            get { return _CreateFlatsViewModel; }
+        }
+        public ChemiSOLOViewModel ChemiSOLOViewModel
+        {
+            get { return _ChemiSOLOViewModel; }
+        }
+        public MultipleExposureViewModel MultipleExposureViewModel
+        {
+            get { return _MultipleExposureViewModel; }
+        }
+        public ManualExposureViewModel ManualExposureViewModel
+        {
+            get { return _ManualExposureViewModel; }
+        }
+
         public string CapturingTopStatusText
         {
             get { return _CapturingTopStatusText; }
@@ -7169,7 +7371,35 @@ namespace Azure.ScannerEUI.ViewModel
 
 
         #region Helper Methods
+        public void LoadMasterLibraryInfo(string commonAppDataFolder)
+        {
+            if (!string.IsNullOrEmpty(commonAppDataFolder))
+            {
+                string mastersDataFolder = System.IO.Path.Combine(commonAppDataFolder, "Masters");
+                if (Directory.Exists(mastersDataFolder))
+                {
+                    _MasterLibrary = new MasterLibrary(commonAppDataFolder);
+                    _MasterLibrary.LoadLibraryInfo();
+                }
+            }
+        }
+        public void LoggerSetup()
+        {
+            //
+            // Create logger
+            //
+            _LogFilePath = Path.Combine(AppDataPath, ProductName + ".log");
+            _Logger = new Logger();
+            _Logger.Open(_LogFilePath);
+            _Logger.SuppressLoggingExceptionEvents = true;
+            _Logger.LogAppConfigSettings();
+        }
+        public void LogMessage(string msg)
+        {
+            if (_Logger == null) return;
 
+            _Logger.LogMessage(msg);
+        }
         public void ShowOnscreenKeyboard()
         {
             try

@@ -1,0 +1,303 @@
+﻿<UserControl x:Class="Azure.ScannerEUI.View.CameraCreateDarkMasters"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Azure.ScannerEUI.View"
+             BorderThickness="1"
+            
+             VerticalAlignment="Top"
+             Width="392.308"
+             Height="365"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Azure.Resources;component/AllResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="20" IsEnabled="{Binding Path=IsCreatingDarkMasterPanel}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="4" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" IsEnabled="{Binding Path=IsCreatingSingleDarkmaster, Converter={StaticResource ResourceKey=logicalNegateConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="4" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0" Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="4" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="4" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="4" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="4" />
+                </Grid.RowDefinitions>
+
+                <TextBlock
+                    Grid.Row="0"
+                    Text="Enter exposure time for each set of master images (1 to 60 minutes). You may enter comma separated list of exposure times for generating several sets of master images."
+                    TextWrapping="WrapWithOverflow" />
+
+                <TextBox
+                    Height="25"
+                    x:Name="_ExposureTimesTextBox"
+                    Grid.Row="2"
+                    IsEnabled="{Binding Path=IsGeneratingDarkmaster, Converter={StaticResource ResourceKey=logicalNegateConverter}}"
+                    PreviewTextInput="TextBox_PreviewTextInput"
+                    Text="{Binding Path=ExposureTimeInput, UpdateSourceTrigger=PropertyChanged}" />
+
+                <Grid x:Name="status" Grid.Row="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="248" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Label
+                        x:Name="label1"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Width="Auto"
+                        Height="28"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="Total Time [DD.HH:MM:SS]:"
+                        FontSize="11" />
+                    <Label
+                        x:Name="_EstTotalTime"
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        Width="180"
+                        Height="28"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding Path=EstTotalTime}"
+                        FontSize="11" />
+                    <Label
+                        x:Name="label2"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Height="28"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="Completion Time:"
+                        FontSize="11" />
+                    <Label
+                        x:Name="_EstCompletionTime"
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Width="180"
+                        Height="28"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding Path=EstCompletionTime}"
+                        FontSize="11" />
+                    <Label
+                        x:Name="label3"
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        Width="Auto"
+                        Height="28"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="Status:"
+                        FontSize="11" />
+                    <TextBlock
+                        Grid.Row="2"
+                        Grid.Column="2"
+                        FontSize="11"
+                        Text="{Binding Path=CurrentStatus}"
+                        TextWrapping="Wrap" Margin="0,0,67,0"
+                        />
+                </Grid>
+
+                <Grid Grid.Row="6">
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                        <Button
+                            x:Name="_GenerateButton"
+                            Style="{StaticResource RaisedButtonStyle}"
+                            Grid.Column="1"
+                            Margin="0,0,8,0"
+                            Command="{Binding Path=GenerateDarkmastersCommand}"
+                            Content="Generate"
+                            FontSize="11"
+                            IsEnabled="{Binding Path=IsGeneratingDarkmaster, Converter={StaticResource ResourceKey=logicalNegateConverter}}" />
+                        <Button
+                            FontSize="11"
+                            x:Name="_CancelButton"
+                            Grid.Column="2"
+                            Command="{Binding Path=StopDarkmasterCommand}"
+                            Content="Cancel"
+                            IsEnabled="{Binding Path=IsGeneratingDarkmaster}" Width="87" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="2">
+            <Expander
+                x:Name="_MoreOptions"
+                Collapsed="_MoreOptions_Collapsed"
+                Expanded="_MoreOptions_Expanded"
+                FontSize="11"
+                Header="More Options"
+                IsEnabled="{Binding Path=IsGeneratingDarkmaster, Converter={StaticResource ResourceKey=logicalNegateConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="6" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="6" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="6" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12*" />
+                        <RowDefinition Height="12" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Row="0"
+                        Margin="0,8"
+                        Text="Create individual darkmaster image."
+                        TextWrapping="WrapWithOverflow" />
+                    <Grid Grid.Row="2" IsEnabled="{Binding Path=IsCreatingSingleDarkmaster, Converter={StaticResource ResourceKey=logicalNegateConverter}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="29*" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Label
+                            x:Name="_labelBin"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Content="Bin"
+                            FontSize="11" />
+                        <Label
+                            x:Name="_labelExposure"
+                            Grid.Column="2"
+                            Height="Auto"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Content="Exposure"
+                            FontSize="11" />
+                        <Label
+                            x:Name="_labelFrames"
+                            Grid.Column="3"
+                            Height="Auto"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Content="Frames"
+                            FontSize="11" />
+                        <ComboBox
+                            FontSize="11"
+                            Name="_comboBoxBinMode"
+                            Grid.Row="2"
+                            Width="108"
+                            Margin="0,2,8,10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            DisplayMemberPath="DisplayName"
+                            ItemsSource="{Binding Path=BinningModeOptions}"
+                            SelectedItem="{Binding Path=SelectedBinningMode}" Height="24" />
+                        
+                        <ComboBox
+                            FontSize="11"
+                            Height="25"
+                            Name="_comboBoxExposureTime"
+                            Grid.Row="2"
+                            Grid.Column="2"
+                            Width="110"
+                            Margin="0,2,8,10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            DisplayMemberPath="DisplayName"
+                            ItemsSource="{Binding Path=ExposureTimeOptions}"
+                            SelectedItem="{Binding Path=SelectedExposureTime}" />
+                        <ComboBox
+                            FontSize="11"
+                            Height="25"
+                            Name="_comboBoxFrameCount"
+                            Grid.Row="2"
+                            Grid.Column="3"
+                            Width="110"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            DisplayMemberPath="DisplayName"
+                            ItemsSource="{Binding Path=FrameCountOptions}"
+                            SelectedItem="{Binding Path=SelectedFrameCount}" Margin="0,2,0,10" />
+
+                    </Grid>
+                    <Grid Grid.Row="4" Margin="0,20,0,0">
+                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button
+                                FontSize="11"
+                                Width="127"
+                                x:Name="btnCreateDark"
+                                Style="{StaticResource RaisedButtonStyle}"
+                                Margin="0,0,8,0"
+                                Command="{Binding Path=CreateDarkmasterCommand}"
+                                Content="Create Darkmaster"
+                                IsEnabled="{Binding Path=IsCreatingSingleDarkmaster, Converter={StaticResource ResourceKey=logicalNegateConverter}}" />
+                            <Button
+                                FontSize="11"
+                                x:Name="btnCancelCreateDark"
+                                Command="{Binding Path=StopDarkmasterCommand}"
+                                Content="Cancel"
+                                IsEnabled="{Binding Path=IsCreatingSingleDarkmaster}" Width="87" />
+                        </StackPanel>
+                    </Grid>
+
+                    <ProgressBar
+                        x:Name="captureProgressBar"
+                        Grid.Row="6"
+                        Width="Auto"
+                        Height="15"
+                        Margin="0,4"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center"
+                        Maximum="{Binding Path=FrameCount, FallbackValue=100}"
+                        Minimum="0"
+                        Value="{Binding Path=CurrentFrame}" />
+                </Grid>
+            </Expander>
+        </Grid>
+    </Grid>
+
+</UserControl>

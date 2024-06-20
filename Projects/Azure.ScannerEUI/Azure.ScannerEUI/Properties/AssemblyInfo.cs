@@ -7,11 +7,11 @@ using System.Windows;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Azure.ScannerV2EUI")]
+[assembly: AssemblyTitle("Azure.ScannerV2EUI.Plus")]
 [assembly: AssemblyDescription("Azure Scanner 2.0 Engineering User Interface")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Azure Biosystems")]
-[assembly: AssemblyProduct("Azure.ScannerV2EUI")]
+[assembly: AssemblyProduct("Azure.ScannerV2EUI.Plus")]
 [assembly: AssemblyCopyright("Copyright ©  2023")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -51,6 +51,6 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.0.0.1161")]
-[assembly: AssemblyFileVersion("2.0.0.1161")]
+[assembly: AssemblyVersion("2.0.1.1161")]
+[assembly: AssemblyFileVersion("2.0.1.1161")]
 //[assembly: log4net.Config.XmlConfigurator(ConfigFile = "Log4Net.config", Watch = true)]

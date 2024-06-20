@@ -27,7 +27,7 @@ namespace Azure.ScannerEUI
 
                 #region Get product information from assembly...
                 string companyName = string.Empty;
-                string productName = "Sapphire FL";
+                string productName = "Azure.ScannerEUI.Plus";
                 object[] customAttributes = null;
                 System.Windows.FrameworkCompatibilityPreferences.KeepTextBoxDisplaySynchronizedWithTextProperty = false;
                 try
@@ -57,7 +57,7 @@ namespace Azure.ScannerEUI
 
                         if (string.IsNullOrEmpty(productName))
                         {
-                            productName = "Sapphire FL";
+                            productName = "Azure.ScannerEUI.Plus";
                         }
 
                         //
@@ -84,7 +84,7 @@ namespace Azure.ScannerEUI
                                        companyName + "\\" + productName);
 
                 CommonApplicationData commonAppData = new CommonApplicationData(companyName, productName, true);
-                //CommonApplicationData mastersAppData = new CommonApplicationData(companyName, productName + "\\Masters", true);
+                CommonApplicationData mastersAppData = new CommonApplicationData(companyName, productName + "\\Masters", true);
                 //CommonApplicationData protocolsAppData = new CommonApplicationData(companyName, productName + "\\Protocols", true);
                 //CommonApplicationData protocolsCustomAppData = new CommonApplicationData(companyName, productName + "\\Protocols\\Custom", true);
                 #endregion
@@ -102,9 +102,10 @@ namespace Azure.ScannerEUI
                                                       version.Minor,
                                                       version.Build,
                                                       version.Revision.ToString("D4"));
-
                 Workspace.This.ProductVersion = productVersion;
-
+                Workspace.This.ProductName = productName;
+                Workspace.This.CompanyName = companyName;
+                Workspace.This.AppDataPath = commonAppDataPath;
                 mutex.ReleaseMutex();
             }
             else
@@ -214,6 +215,14 @@ namespace Azure.ScannerEUI
 
         [DllImport("user32.dll", SetLastError = true)]
         internal static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+        [DllImport("kernel32.dll")]
+        public static extern uint SetThreadExecutionState(uint esFlags);
+
+        public const uint ES_SYSTEM_REQUIRED = 0x00000001;
+        public const uint ES_DISPLAY_REQUIRED = 0x00000002;
+        public const uint ES_USER_PRESENT = 0x00000004;
+        public const uint ES_AWAYMODE_REQUIRED = 0x00000040;
+        public const uint ES_CONTINUOUS = 0x80000000;
     }
 
     /// <summary>

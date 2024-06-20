@@ -1,0 +1,139 @@
+﻿<UserControl x:Class="Azure.ScannerEUI.View.MultipleExposureControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Azure.ScannerEUI.View"
+             mc:Ignorable="d" 
+             d:DesignHeight="170" d:DesignWidth="240">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Azure.Resources;component/AllResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock
+            Margin="0,0,0,12"
+            FontWeight="SemiBold"
+            Text="Exposure" />
+        <Grid Grid.Row="1" Margin="0,0,0,6">
+            <StackPanel Orientation="Horizontal">
+                <TextBox
+                    Width="42"
+                    Margin="0,0,4,0"
+                    HorizontalContentAlignment="Center"
+                    IsReadOnly="True"
+                    Text="{Binding FrameCount, FallbackValue=1}" />
+                <Button
+                    Width="24"
+                    Height="24"
+                    Command="{Binding Path=FrameDecrCommand}"
+                    Content="-"
+                    FontSize="12" />
+                <Button
+                    Width="24"
+                    Height="24"
+                    Margin="4,0,0,0"
+                    Command="{Binding Path=FrameIncrCommand}"
+                    Content="+"
+                    FontSize="12" />
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <StackPanel Orientation="Horizontal">
+                    <!--  Minutes  -->
+                    <StackPanel>
+                        <TextBlock  Text="Min" />
+                        <TextBox
+                            Width="70"
+                            Height="30"
+                            FontSize="20"
+                            PreviewTextInput="TextBox_PreviewTextInput"
+                            Text="{Binding Path=ExposureMin, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                            TextAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock
+                        Margin="4,0,4,8"
+                        VerticalAlignment="Bottom"
+                        Text=":" />
+                    <!--  Seconds  -->
+                    <StackPanel>
+                        <TextBlock  Text="sec" />
+                        <TextBox
+                            Width="70"
+                            Height="30"
+                            FontSize="20"
+                            PreviewTextInput="TextBox_PreviewTextInput"
+                            Text="{Binding Path=ExposureSec, UpdateSourceTrigger=PropertyChanged}"
+                            TextAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock
+                        Margin="4,0,4,8"
+                        VerticalAlignment="Bottom"
+                        Text="." />
+                    <StackPanel>
+                        <TextBlock Text="Msec" />
+                        <TextBox
+                            Height="30"
+                            Width="70"
+                            FontSize="20"
+                            PreviewTextInput="TextBox_PreviewTextInput"
+                            Text="{Binding Path=ExposureMSec, UpdateSourceTrigger=PropertyChanged}"
+                            TextAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+           
+        </Grid>
+        <Grid Grid.Row="3">
+             <Grid Grid.Column="1" >
+                <StackPanel Margin="10,16,0,0" Orientation="Horizontal">
+                    <TextBlock  VerticalAlignment="Center" Text="IMAGE" />
+                    <TextBlock
+                      
+                        Margin="8,0"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Text="{Binding Path=SelectedFrame, FallbackValue=0}" />
+                    <TextBlock  VerticalAlignment="Center" Text=" OF " />
+                    <TextBlock
+                       
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Text="{Binding Path=FrameCount, FallbackValue=0}" />
+                    <Button
+                        Width="24"
+                        Height="24"
+                        Margin="20,0,0,0"
+                        Command="{Binding Path=FrameLeftCommand}"
+                        Content="&lt;"
+                        FontSize="12" />
+                    <Button
+                        Width="24"
+                        Height="24"
+                        Margin="4,0,0,0"
+                        Command="{Binding Path=FrameRightCommand}"
+                        Content="&gt;"
+                        FontSize="12" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

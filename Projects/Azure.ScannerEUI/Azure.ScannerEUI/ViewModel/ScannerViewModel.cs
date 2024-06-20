@@ -1735,6 +1735,7 @@ namespace Azure.ScannerEUI.ViewModel
             _ScanningProcess.ApplicationDataPath = SettingsManager.ApplicationDataPath;
             OnSpentTimeStart();//SpentTime 
             _ScanningProcess.Start();
+            Workspace.This.CameraModeViewModel.IsCameraEnabled = false;
             Workspace.This.MotorIsAlive = false;
             Workspace.This.IsScanning = true;
             //Optical module button disabled
@@ -1802,6 +1803,7 @@ namespace Azure.ScannerEUI.ViewModel
                 Workspace.This.IsPreparing = false;
                 //Enable Motor control
                 Workspace.This.MotorIsAlive = true;
+                Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
                 ScanProcessing scannedThread = (sender as ScanProcessing);
 
                 if (exitState == ThreadBase.ThreadExitStat.None)
@@ -2481,6 +2483,7 @@ namespace Azure.ScannerEUI.ViewModel
                 //终止当前扫描
                 //Terminate the current scan
                 WorkDone();
+                Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
                 //Enable Motor control
                 Workspace.This.MotorIsAlive = true;
                 //光学模块按钮启用  Optical module button enable
@@ -2495,6 +2498,7 @@ namespace Azure.ScannerEUI.ViewModel
                 { //终止当前扫描
                   //Terminate the current scan
                     WorkDone();
+                    Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
                     //Enable Motor control
                     Workspace.This.MotorIsAlive = true;
                     Workspace.This.DisconnectDeviceEnable = true; //光学模块按钮启用  Optical module button enable

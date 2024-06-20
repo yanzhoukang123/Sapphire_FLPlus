@@ -1,7 +1,10 @@
-﻿using System;
+﻿using OpenCvSharp;
+using OpenCvSharp.WpfExtensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -486,6 +489,37 @@ namespace Azure.Image.Processing
 
             return cpyImage;
         }
+
+        public unsafe WriteableBitmap ChemiSOLO_MatrixMultiplyScaledFactor(WriteableBitmap srcImage, float[] flatImageResurtMatrix, double oprValue)
+        {
+            WriteableBitmap cpyImage = (WriteableBitmap)srcImage.Clone();
+            fixed (float* ptr = flatImageResurtMatrix)
+            {
+                cpyImage.Lock();
+                int imgHeight = cpyImage.PixelHeight;
+                int imgWidth = cpyImage.PixelWidth;
+                ushort* imgData = (ushort*)cpyImage.BackBuffer.ToPointer();
+
+                for (int i = 0; i < imgHeight; i++)
+                {
+
+                    for (int j = 0; j < imgWidth; j++)
+                    {
+                        float temp = *(ptr + (i * (imgWidth)) + j);
+                        ushort result = (ushort)(temp * oprValue);
+                        if (result > 16384)
+                        {
+                            result = 16384;
+                        }
+                        *(imgData + (i * (imgWidth)) + j) = result;
+                    }
+
+                }
+                if (!srcImage.IsFrozen)
+                    srcImage.Unlock();
+            }
+            return cpyImage;
+        }
         #endregion
 
         #region public unsafe WriteableBitmap Divide(WriteableBitmap srcImage, double oprValue)
@@ -945,5 +979,229 @@ namespace Azure.Image.Processing
         }
         #endregion
 
+        public WriteableBitmap ConvertBinKxk(WriteableBitmap captureImage, int bin, bool Isaverage = false)
+        {
+            int width = captureImage.PixelWidth;
+            int height = captureImage.PixelHeight;
+            int newWidth = width / bin;
+            int newHeight = height / bin;
+            WriteableBitmap newImage = new WriteableBitmap(newWidth, newHeight, 0, 0, PixelFormats.Gray16, null);
+            captureImage.Lock();
+            newImage.Lock();
+            unsafe
+            {
+                ushort* captureImagePtr = (ushort*)captureImage.BackBuffer.ToPointer();
+                ushort* newImagePtr = (ushort*)newImage.BackBuffer.ToPointer();
+                for (int y = 0; y < newHeight; y++)
+                {
+                    for (int x = 0; x < newWidth; x++)
+                    {
+                        int startX = x * bin;
+                        int startY = y * bin;
+                        ushort sum = 0;
+                        for (int dy = 0; dy < bin; dy++)
+                        {
+                            for (int dx = 0; dx < bin; dx++)
+                            {
+                                int index = (startY + dy) * width + (startX + dx);
+                                sum += captureImagePtr[index];
+                            }
+                        }
+                        int newIndex = y * newWidth + x;
+                        if (Isaverage)
+                        {
+                            ushort average = (ushort)(sum / (bin * bin));
+                            newImagePtr[newIndex] = average;
+                        }
+                        else
+                        {
+                            newImagePtr[newIndex] = sum;
+                        }
+                    }
+                }
+            }
+            captureImage.Unlock();
+            newImage.Unlock();
+            return newImage;
+        }
+
+        public Mat ConvertWriteableBitmapToMat(WriteableBitmap writeableBitmap)
+        {
+            int width = writeableBitmap.PixelWidth;
+            int height = writeableBitmap.PixelHeight;
+            writeableBitmap.Lock();
+            Mat mat = new Mat(height, width, MatType.CV_16U);
+
+            unsafe
+            {
+                ushort* ptr = (ushort*)writeableBitmap.BackBuffer;
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int index = y * width + x;
+                        mat.Set<ushort>(y, x, ptr[index]);
+                    }
+                }
+            }
+            writeableBitmap.Unlock();
+            return mat;
+        }
+
+        public WriteableBitmap ConvertMatToWriteableBitmap(Mat mat)
+        {
+            return mat.ToWriteableBitmap();
+        }
+
+        public void CalculateIntensityValues(Mat captureImage, out double maxIntensity, out double modeIntensity)
+        {
+            //找到最大最小值
+            double l1minVal, l1maxVal;
+            OpenCvSharp.Point l1minLoc, l1maxLoc;
+            Cv2.MinMaxLoc(captureImage, out l1minVal, out l1maxVal, out l1minLoc, out l1maxLoc);
+
+            // 定义直方图参数
+            int[] AllhistSize = { 65536 };
+            float[] Allrange = { 0, 65535 }; // 像素值范围
+            Rangef[] AllhistRange = { new Rangef(Allrange[0], Allrange[1]) };
+            bool uniform = true, accumulate = false;
+            Mat hist = new Mat();
+            Cv2.CalcHist(new[] { captureImage }, new[] { 0 }, null, hist, 1, AllhistSize, AllhistRange, uniform, accumulate);
+            double FristPeekminVal, FristPeek, FristPeekPixel;
+            OpenCvSharp.Point FristPeekminLoc, FristPeekmaxLoc;
+            Cv2.MinMaxLoc(hist, out FristPeekminVal, out FristPeek, out FristPeekminLoc, out FristPeekmaxLoc);
+            FristPeekPixel = FristPeekmaxLoc.Y;
+            //重新以256的bins获取直方图，范围是最小像素和最大像数之间
+            int[] histSize = { 256 };
+            float minVal = (float)l1minVal;
+            float maxVal = (float)l1maxVal;
+            if (minVal >= maxVal)
+            {
+                minVal = 0;
+            }
+            float[] range = { minVal, maxVal };
+            Rangef[] histRange = { new Rangef(range[0], range[1]) };
+            Cv2.CalcHist(new[] { captureImage }, new[] { 0 }, new Mat(), hist, 1, histSize, histRange, uniform, accumulate);
+
+            double minVal1, maxVal1;
+            OpenCvSharp.Point minLoc, maxLoc;
+            Cv2.MinMaxLoc(hist, out minVal1, out maxVal1, out minLoc, out maxLoc);
+
+            Console.WriteLine("Mode=" + FristPeekPixel + "(" + maxVal1 + ")");
+            Console.WriteLine("l1=" + l1maxVal);
+            Console.WriteLine("l2=" + FristPeekPixel);
+
+            maxIntensity = l1maxVal;
+            modeIntensity = FristPeekPixel;
+        }
+
+        public Mat Mat16bitConvertTo8bit(Mat src)
+        {
+            Mat tmp = new Mat();
+            Mat dst8 = new Mat(src.Size(), MatType.CV_8U);
+            Cv2.Normalize(src, tmp, 0, 255, NormTypes.MinMax);
+            Cv2.ConvertScaleAbs(tmp, dst8);
+            return dst8;
+        }
+
+
+        public int GetImageSum(Mat src, int number)
+        {
+            int sumCount = 0;
+            int rows = src.Rows;
+            int cols = src.Cols;
+            for (int i = 0; i < rows; i++)
+            {
+
+                for (int j = 0; j < cols; j++)
+                {
+                    int Pixel = src.At<int>(i, j);
+                    if (Pixel == number)
+                    {
+                        sumCount++;
+                    }
+
+                }
+
+            }
+            return sumCount;
+
+        }
+        public string GetSampleType(Mat src, int Number, double sampleType_t)
+        {
+            int sum = src.Cols * src.Rows;
+            double sum_80 = sum * (sampleType_t * 0.01);
+            if (Number > sum_80)
+                return "GEL";
+            return "BLOT";
+        }
+
+        public unsafe void M1_Split(ref WriteableBitmap Back, ref WriteableBitmap Fach, WriteableBitmap Mask)
+        {
+            int width = Back.PixelWidth;
+            int height = Back.PixelHeight;
+            Back.Lock();
+            Fach.Lock();
+            Mask.Lock();
+            ushort* Backbuff = (ushort*)Back.BackBuffer.ToPointer();
+            ushort* Fachbuff = (ushort*)Fach.BackBuffer.ToPointer();
+            ushort* Maskbuff = (ushort*)Mask.BackBuffer.ToPointer();
+            int Backindex = 0;
+            int Fachindex = 0;
+            int Maskindex = 0;
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    Backindex = x + y * Back.BackBufferStride / 2;
+                    Fachindex = x + y * Fach.BackBufferStride / 2;
+                    Maskindex = x + y * Mask.BackBufferStride / 2;
+
+                    ushort maskiResult = Maskbuff[Maskindex];
+                    if (maskiResult != 0)
+                    {
+                        Backbuff[Backindex] = 0;
+
+                    }
+                    else
+                    {
+                        Fachbuff[Fachindex] = 0;
+                    }
+                }
+
+            }
+            Back.Unlock();
+            Fach.Unlock();
+            Mask.Unlock();
+        }
+        public unsafe WriteableBitmap M1_Merge(WriteableBitmap back, WriteableBitmap fach)
+        {
+            int width = back.PixelWidth;
+            int height = back.PixelHeight;
+            back.Lock();
+            fach.Lock();
+            ushort* Backbuff = (ushort*)back.BackBuffer.ToPointer();
+            ushort* Fachbuff = (ushort*)fach.BackBuffer.ToPointer();
+            int Backindex = 0;
+            int Fachindex = 0;
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    Backindex = x + y * back.BackBufferStride / 2;
+                    Fachindex = x + y * fach.BackBufferStride / 2;
+                    ushort backiResult = Backbuff[Backindex];
+                    ushort fackiResult = Fachbuff[Fachindex];
+                    if (backiResult == 0)
+                    {
+                        Backbuff[Backindex] = fackiResult;
+                    }
+                }
+
+            }
+            back.Unlock();
+            fach.Unlock();
+            return back;
+        }
     }
 }

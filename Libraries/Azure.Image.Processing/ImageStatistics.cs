@@ -78,6 +78,32 @@ namespace Azure.Image.Processing
             return totalSum / (rectImageROI.Width * rectImageROI.Height);
         }
 
+        public unsafe double ChemiSOLO_GetS_FImageMatrixAverage(WriteableBitmap srcimg,float[] flatImageResurtMatrix, Rectangle rectROI)
+        {
+            fixed (float* ptr = flatImageResurtMatrix)
+            {
+                srcimg.Lock();
+                int imgWidth = srcimg.PixelWidth;
+                double totalSum = 0;
+                int Top = rectROI.Y;  // y coordinates
+                int Bottom = rectROI.Y + rectROI.Height;  //y coordinates + height
+                int Left = rectROI.X; //x coordinates
+                int Width = rectROI.Width;
+                int Height = rectROI.Height;
+                for (int i = Top; i < Bottom; i++)
+                {
+                    for (int j = 0; j < Width; j++)
+                    {
+                        float temp = *(ptr + Left + i * imgWidth + j);
+                        totalSum += temp;
+                    }
+                }
+                if (!srcimg.IsFrozen)
+                    srcimg.Unlock();
+                return totalSum / (Width * Height);
+            }
+        }
+
         public double GetStdDeviation(WriteableBitmap srcimg, Rectangle rectROI)
         {
             throw new Exception("The method or operation is not implemented.");
@@ -345,8 +371,56 @@ namespace Azure.Image.Processing
             return iMaxLevel;
         }
 
+        public unsafe int GetPixelMax(WriteableBitmap srcimage)
+        {
+            int iMaxLevel = 0;
+            if (srcimage == null) { return iMaxLevel; }
+
+            int stride = srcimage.BackBufferStride;
+            ushort* pixelData = (ushort*)srcimage.BackBuffer.ToPointer();
+            for (int y = 0; y < srcimage.PixelHeight; y++)
+            {
+                for (int x = 0; x < srcimage.PixelWidth; x++)
+                {
+                    int offset = y * stride / 2 + x;
+                    ushort pixelValue = pixelData[offset];
+
+                    if (pixelValue > iMaxLevel)
+                    {
+                        iMaxLevel = pixelValue;
+                    }
+                }
+            }
+
+            // Reserve the back buffer for updates.
+            if (!srcimage.IsFrozen)
+                srcimage.Lock();
+
+            return iMaxLevel;
+        }
+
         #endregion
 
+        public unsafe double GetMean(WriteableBitmap srcimage)
+        {
+
+            double sum = 0.0;
+            int width = srcimage.PixelWidth;
+            int height = srcimage.PixelHeight;
+            int pixelCount = width * height;
+            unsafe
+            {
+                ushort* ptr = (ushort*)srcimage.BackBuffer.ToPointer();
+                for (int i = 0; i < pixelCount; i++)
+                {
+                    sum += ptr[i];
+                }
+            }
+
+            double mean = sum / pixelCount;
+
+            return mean;
+        }
         // Helper method
         private Rectangle CreateRectangleFromLTRB(WriteableBitmap image, Rectangle rectROI)
         {

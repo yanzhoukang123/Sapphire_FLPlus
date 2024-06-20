@@ -1,0 +1,114 @@
+﻿<UserControl x:Class="Azure.ScannerEUI.View.CameraCreateFlats"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Azure.ScannerEUI.View"
+             BorderThickness="1"
+             VerticalAlignment="Top"
+             Width="392.308"
+             Height="365">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Azure.Resources;component/AllResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid Margin="20" IsEnabled="{Binding Path=IsCreatingFlatsPanel}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0">
+            <TextBlock Style="{StaticResource TextBlockBodyTextStyle}" Text="CREATE FLAT-FIELD IMAGE" />
+            <TextBlock
+                FontSize="11"
+                Margin="0,8"
+                VerticalAlignment="Center"
+                TextWrapping="WrapWithOverflow">
+                Please select the light source, and enter the exposure time, then press the
+                <Bold>Create Flat</Bold>
+                button to begin.
+            </TextBlock>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Margin="0,10,0,0" HorizontalAlignment="Left">
+            <TextBlock
+                Grid.Column="2"
+                Margin="0,0,0,8"
+                Text="LIGHT SOURCE" />
+
+            <ComboBox
+                Height="25"
+                Name="_LightingTypeComboBox"
+                Grid.Row="2"
+                Grid.Column="2"
+                Width="140"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                DisplayMemberPath="DisplayName"
+                IsEnabled="{Binding Path=IsCreatingFlats, Converter={StaticResource logicalNegateConverter}}"
+                ItemsSource="{Binding Path=LightingTypes}"
+                SelectedIndex="0"
+                SelectedItem="{Binding Path=SelectedLightingType}" />
+        </StackPanel>
+
+        <StackPanel
+            Grid.Row="2"
+            Margin="0,20"
+            HorizontalAlignment="Left"
+            Orientation="Horizontal">
+            <Button
+                x:Name="_CreateFlatBtn"
+                Style="{StaticResource RaisedButtonStyle}"
+                Margin="0,0,8,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Command="{Binding Path=CreateFlatsCommand}"
+                Content="Create Flat"
+                IsDefault="True"
+                IsEnabled="{Binding Path=IsCreatingFlats, Converter={StaticResource ResourceKey=logicalNegateConverter}}" />
+            <Button
+                x:Name="_CancelBtn"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Command="{Binding Path=CancelFlatsCommand}"
+                Content="Cancel"
+                IsEnabled="{Binding Path=IsCreatingFlats}" Height="32" Margin="0,4,0,3" Width="94" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal">
+            <StackPanel>
+                <TextBlock Style="{StaticResource TextBlockBodyTextStyle}" VerticalAlignment="Center" Text="Exposure Time (sec):" Margin="0,0,8,0"/>
+                <TextBox
+                    x:Name="_ExposureTimeTextBox"
+                    Width="140"
+                    VerticalAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Text="{Binding Path=ExposureTimeInSec}"
+                />
+            </StackPanel>
+            <CheckBox
+                IsChecked="{Binding Path=IsAutoExposure}"
+                Margin="10,15,0,0">
+                <TextBlock
+                    FontSize="11">
+                    <Run Text="Use " /> <Run FontWeight="DemiBold" Text="Auto Exposure" />
+                </TextBlock>
+            </CheckBox>
+        </StackPanel>
+        <CheckBox
+            x:Name="_SendImageToGallery"
+            Grid.Row="4"
+            Margin="0,20,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            Content="View flat image in Gallery tab"
+            FontSize="11"
+            IsChecked="{Binding Path=IsSendImageToGallery}" />
+    </Grid>
+</UserControl>
