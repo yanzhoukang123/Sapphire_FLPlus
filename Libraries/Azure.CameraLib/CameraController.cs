@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Azure.Image.Processing;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,9 +29,13 @@ namespace Azure.CameraLib
         private int _Left = 0;
         private int _Top = 0;
         private bool SingeCapture = false;
+        public bool LiveCapture = false;
         WriteableBitmap temp = null;
+        Toupcam.FrameInfoV3 info;
         ushort[] pixelData = null;
-        private double _Scalefactor = 0.875;//这个相机是14位的，因此我们在使用16位的算法时需要用到这个系数
+        public delegate void ImageReceivedHandler(WriteableBitmap dis);
+        public event ImageReceivedHandler LiveImageReceived;
+        int _currentMode = 0;
         #endregion
 
         #region Properties
@@ -46,7 +51,7 @@ namespace Azure.CameraLib
             Average_Binning3x3 = 0x83,
             Average_Binning4x4 = 0x84,
 
-            
+
 
         }
         public double CcdTemp
@@ -81,7 +86,6 @@ namespace Azure.CameraLib
         public int Top { get => _Top; set => _Top = value; }
         public int CaptureImage_Width { get => _CaptureImage_Width; set => _CaptureImage_Width = value; }
         public int CaptureImage_Height { get => __CaptureImage_Height; set => __CaptureImage_Height = value; }
-        public double Scalefactor { get => _Scalefactor; set => _Scalefactor = value; }
         #endregion
         public CameraController()
         {
@@ -123,7 +127,10 @@ namespace Azure.CameraLib
         {
             IsCameraConnected = false;
             if (cam_ != null)
+            {
+                CloseCamera();
                 return false;
+            }
             Toupcam.DeviceV2[] arr = Toupcam.EnumV2();
             if (arr.Length <= 0)
             {
@@ -148,7 +155,7 @@ namespace Azure.CameraLib
 
                 //获取相机的曝光时间范围,如果不在这个范围内，将无法捕获到图像，
                 decimal min = 0, max = 0;
-                InitExpoTime(out min, out max); 
+                InitExpoTime(out min, out max);
                 ExposureTime_MIN = min;
                 ExposureTime_Max = max;
 
@@ -162,28 +169,15 @@ namespace Azure.CameraLib
                     CaptureImage_Height = Height = (int)height;
 
                 }
-
-                /*.
-                0 = 表示使用8Bits位深度.
-                1 = 表示使用本相机支持的最高位深度*/
-                cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 1);
-
-                //相机支持的最大位深度(bitdepth)
-
-                /* 0 = 使用RGB24
-                   1 = 在位深度 > 8时, 启用RGB48格式
-                   2 = 使用RGB32
-                   3 = 8位灰度(只对黑白相机有效)
-                   4 = 16位灰度(只对黑白相机并且位深度 > 8时有效)
-                   5 = 在位深度 > 8时, 启用RGB64格式 */
-                cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 4);
-
-                //触发模式，这个模式下可以控制相机拍摄的图片张数，比如1张，或者一直循环。
-                cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, 1);
+                info = new Toupcam.FrameInfoV3();
+                //视频模式
+                cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, 0);
                 //TEC 1=启动TEC,0=关闭TEC。 
                 cam_.put_Option(Toupcam.eOPTION.OPTION_TEC, 1);
                 IsCameraConnected = true;
                 SetCCDTemp(-10);//设置-10
+                if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
+                    return false;
                 return true;
             }
             return false;
@@ -204,7 +198,10 @@ namespace Azure.CameraLib
                         OnEventExposure();
                         break;
                     case Toupcam.eEVENT.EVENT_IMAGE:
-                        OnEventImage();
+                        if (_currentMode == 1)
+                            OnEventImage();
+                        else
+                            LiveEventimage();
                         break;
                     default:
                         break;
@@ -230,7 +227,7 @@ namespace Azure.CameraLib
             cam_.Close();
             cam_ = null;
             IsCameraConnected = false;
-            MessageBox.Show("Camera disconnect.");
+            //MessageBox.Show("Camera disconnect.");
         }
 
         /// <summary>
@@ -250,34 +247,59 @@ namespace Azure.CameraLib
         private unsafe void OnEventImage()
         {
             temp = new WriteableBitmap(CaptureImage_Width, CaptureImage_Height, 0, 0, PixelFormats.Gray16, null);
-            Toupcam.FrameInfoV3 info = new Toupcam.FrameInfoV3();
             bool bOK = false;
-            int bits = 16;
             try
             {
                 temp.Lock();
-                try
-                {
-                    bOK = cam_.PullImageV3(temp.BackBuffer, 0, bits, temp.BackBufferStride, out info); // check the return value
-                    temp.AddDirtyRect(new Int32Rect(0, 0, temp.PixelWidth, temp.PixelHeight));
-                }
-                finally
-                {
-                    temp.Unlock();
-                    if (SingeCapture)//完成了图像捕获
-                    {
-                        int stride = (temp.PixelWidth * temp.Format.BitsPerPixel + 7) / 8;
-                        pixelData = new ushort[temp.PixelHeight * stride];
-                        temp.CopyPixels(pixelData, stride, 0);
-                        SingeCapture = false;//停止捕获
-                    }
-                }
+                bOK = cam_.PullImageV3(temp.BackBuffer, 0, 16, temp.BackBufferStride, out info); // check the return value
+                temp.AddDirtyRect(new Int32Rect(0, 0, temp.PixelWidth, temp.PixelHeight));
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.ToString());
             }
-            // temp = null;
+            finally
+            {
+                temp.Unlock();
+                if (SingeCapture)//完成了图像捕获
+                {
+                    int stride = (temp.PixelWidth * temp.Format.BitsPerPixel + 7) / 8;
+                    pixelData = new ushort[temp.PixelHeight * stride];
+                    temp.CopyPixels(pixelData, stride, 0);
+                    SingeCapture = false;//停止捕获
+                }
+            }
+        }
+
+        private void LiveEventimage()
+        {
+            temp = new WriteableBitmap(CaptureImage_Width, CaptureImage_Height, 0, 0, PixelFormats.Bgr32, null);
+            bool bOK = false;
+            try
+            {
+                temp.Lock();
+                bOK = cam_.PullImageV3(temp.BackBuffer, 0, 32, temp.BackBufferStride, out info); // check the return value
+                temp.AddDirtyRect(new Int32Rect(0, 0, temp.PixelWidth, temp.PixelHeight));
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.ToString());
+            }
+            finally
+            {
+                temp.Unlock();
+                if (LiveCapture && bOK)
+                {
+                    if (temp != null)
+                    {
+                        if (temp.CanFreeze)
+                        {
+                            temp.Freeze();
+                        }
+                    }
+                    LiveImageReceived?.Invoke(temp);
+                }
+            }
         }
         /// <summary>
         /// 相机支持的曝光时间范围(微秒） The exposure time range supported by the camera (Microsecond)
@@ -317,7 +339,7 @@ namespace Azure.CameraLib
             if (cam_ != null)
             {
                 int _bin = (int)binning;
-                bool result= cam_.put_Option(Toupcam.eOPTION.OPTION_BINNING, _bin);
+                bool result = cam_.put_Option(Toupcam.eOPTION.OPTION_BINNING, _bin);
                 return result;
             }
             return false;
@@ -366,7 +388,7 @@ namespace Azure.CameraLib
             }
             return false;
         }
-        public bool ChangeTriggerMode(ushort trigger)  //1=捕获一张,0xffff=循环捕获，0=停止捕获, 必须在触发模式这三个参数才有效
+        public bool ChangeTriggerMode(ushort trigger)  //1=捕获一张,0xffff=循环捕获，0=停止捕获, 触发模式才有效
         {
             if (cam_.Trigger(trigger))
             {
@@ -376,9 +398,8 @@ namespace Azure.CameraLib
         }
         public unsafe bool CapturesImage(ref WriteableBitmap capturedImage)
         {
-            cam_.Stop();//Stop后可以重新定义DelegateOnEventCallback代理函数
-            if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
-                return false;
+            //更改为触发模式，这个模式下可以控制相机拍摄的图片张数，比如1张，或者一直循环。
+            ChangeCaptureMode(1);
             if (ChangeTriggerMode(1))//捕获一张
             {
                 SingeCapture = true;
@@ -386,28 +407,69 @@ namespace Azure.CameraLib
                 {
                     Thread.Sleep(1);
                 }
-                PixelFormat format = PixelFormats.Gray16;
-                int stride = (CaptureImage_Width * format.BitsPerPixel + 7) / 8;
-                BitmapSource bitmapSource = BitmapSource.Create(CaptureImage_Width, CaptureImage_Height, 96, 96, format, null, pixelData, stride);
-                capturedImage = new WriteableBitmap(bitmapSource);
-
-                //ushort* Caputrebuff = (ushort*)capturedImage.BackBuffer.ToPointer();
-                //ushort* tempbuff = (ushort*)temp.BackBuffer.ToPointer();
-                //int index = 0;
-                //for (int x = 0; x < Width; x++)
-                //{
-                //    for (int y = 0; y < Height; y++)
-                //    {
-                //        index = x + y * temp.BackBufferStride / 2;
-                //        Caputrebuff[index] = tempbuff[index];
-                //    }
-
-                //}
+                //14bit to 16bit
+                fixed (ushort* ptr = pixelData)
+                {
+                    for (int i = 0; i < pixelData.Length; i++)
+                    {
+                        *(ptr + i) = (ushort)((*(ptr + i)) << 2);
+                    }
+                }
+                WriteableBitmap temp;
+                ImageProcessing.FrameToBitmap(out temp, pixelData, CaptureImage_Width, CaptureImage_Height);
+                capturedImage = temp;
                 return true;
             }
             return false;
         }
-
+        public unsafe bool ChangeCaptureMode(int mode)
+        {
+            //0=视频模式,1=触发模式
+            int currentMode = 0;
+            _currentMode = mode;
+            cam_.get_Option(Toupcam.eOPTION.OPTION_TRIGGER, out currentMode);
+            if (mode != currentMode)
+            {
+                cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, mode);
+                Thread.Sleep(300);
+            }
+            if (mode == 0 && currentMode != 0)
+            {
+                cam_.Stop();
+                ///*.
+                //  0 = 表示使用8Bits位深度.
+                //  1 = 表示使用本相机支持的最高位深度*/
+                cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 0);
+                //相机支持的最大位深度(bitdepth)
+                /* 0 = 使用RGB24
+                   1 = 在位深度 > 8时, 启用RGB48格式
+                   2 = 使用RGB32
+                   3 = 8位灰度(只对黑白相机有效)
+                   4 = 16位灰度(只对黑白相机并且位深度 > 8时有效)
+                   5 = 在位深度 > 8时, 启用RGB64格式 */
+                cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 2);
+                if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
+                    return false;
+            }
+            else if (mode == 1 && currentMode != 1)
+            {
+                cam_.Stop();
+                ///*.
+                //  0 = 表示使用8Bits位深度.
+                //  1 = 表示使用本相机支持的最高位深度*/
+                cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 1);
+                //相机支持的最大位深度(bitdepth)
+                /* 0 = 使用RGB24
+                   1 = 在位深度 > 8时, 启用RGB48格式
+                   2 = 使用RGB32
+                   3 = 8位灰度(只对黑白相机有效)
+                   4 = 16位灰度(只对黑白相机并且位深度 > 8时有效)
+                   5 = 在位深度 > 8时, 启用RGB64格式 */
+                cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 4);
+                if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
+                    return false;
+            }
+            return true;
+        }
     }
-
 }

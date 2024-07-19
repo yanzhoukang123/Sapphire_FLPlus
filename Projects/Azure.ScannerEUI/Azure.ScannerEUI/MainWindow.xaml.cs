@@ -151,6 +151,9 @@ namespace Azure.ScannerEUI
                 Workspace.This.OpticalModulePowerStatus = true;
             }
             this.Loaded += new RoutedEventHandler(MainWindow_Loaded);
+            //Workspace.This.NewParameterVM.FanReserveTemperature = 24;
+            //Workspace.This.NewParameterVM.WriteOtherSettings();
+            Workspace.This.EthernetController.SetCurrentMode(0);//软件首次允许时进入到扫描模式
             //Workspace.This.IsAuthenticated = true;
             //Workspace.This.MotorIsAlive = true;
             //Workspace.This.MotorVM.InitMotorControls();
@@ -245,6 +248,7 @@ namespace Azure.ScannerEUI
                         ProgressValueAndMessage(80, "Black", "Identify Optic Modules A, B and C…Succeeded…");
                         // Workspace.This.IVVM.InitIVControls();
                         Workspace.This.MotorIsAlive = true;
+
                         Workspace.This.EthernetController.GetAllIvModulesInfo();
                         ProgressValueAndMessage(90, "Black", "LaserModulseInfo…Succeeded…");
                         //获取所有通道激光信息
@@ -437,6 +441,15 @@ namespace Azure.ScannerEUI
                     Workspace.This.EthernetController.SetIvPga(IVChannels.ChannelA, 0);
                     Workspace.This.EthernetController.SetIvPga(IVChannels.ChannelB, 0);
                     Workspace.This.EthernetController.SetIvPga(IVChannels.ChannelC, 0);
+                    Workspace.This.EthernetController.SetCurrentMode(0);//软件进入到扫描模式
+                    if (Workspace.This.CameraModeViewModel.IsCapturing)
+                    {
+                        Workspace.This.CameraModeViewModel.ExecuteStopCaptureCommand(null);
+                    }
+                    if (Workspace.This.CameraModeViewModel.IsContinuous)
+                    {
+                        Workspace.This.CameraModeViewModel.ExecuteStopContinuousCommand(null);
+                    }
                     Workspace.This.EthernetController.Disconnect();
                 }
             }

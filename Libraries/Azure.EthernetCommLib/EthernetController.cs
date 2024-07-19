@@ -695,6 +695,11 @@ namespace Azure.EthernetCommLib
             byte[] cmd = AvocadoProtocol.SetRegisterControl(sige);
             return SendBytes(cmd);
         }
+        public bool SetCurrentMode(int sige)
+        {
+            byte[] cmd = AvocadoProtocol.SetCurrentMode(sige);
+            return SendBytes(cmd);
+        }
         public bool SetIncrustationFan()
         {
             byte[] cmd = AvocadoProtocol.SetIncrustationFan();

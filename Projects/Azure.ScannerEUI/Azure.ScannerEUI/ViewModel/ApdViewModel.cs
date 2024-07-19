@@ -14,6 +14,7 @@ using Azure.ImagingSystem;
 using Azure.Configuration.Settings;
 using System.Threading;
 using Azure.EthernetCommLib;
+using Azure.ScannerEUI.View;
 
 namespace Azure.ScannerEUI.ViewModel
 {
@@ -79,6 +80,7 @@ namespace Azure.ScannerEUI.ViewModel
         public int _TempR2PMTValue = 0;
         public int _TempPMTValueSinge = 0;
         private bool IsFrontDoorWarning = false;
+        MessageBoxWindow mbw = new MessageBoxWindow();
         #endregion
         //Top cover lock status（HW Version 1.1.0.0）   顶盖锁状态(硬件版本V1.1)
         public bool? TopCoverLock
@@ -110,10 +112,35 @@ namespace Azure.ScannerEUI.ViewModel
                     if (value == true)
                     {
                         //PC is not monitoring this during operation
-                        if (!Workspace.This.PC_OpticalModulePowerOn_Off && !IsFrontDoorWarning)
+                        if (!Workspace.This.PC_OpticalModulePowerOn_Off && !IsFrontDoorWarning && !Workspace.This.CameraModeViewModel.IsChemiMode)
                         {
                             IsFrontDoorWarning = true;
                             FrontDoorOpenMonitoring();
+                        }
+                        if (Workspace.This.CameraModeViewModel.IsChemiMode)//在Chemi模式
+                        {
+                            if (Workspace.This.CameraModeViewModel.IsCapturing)
+                            {
+                                Workspace.This.CameraModeViewModel.ExecuteStopCaptureCommand(null);
+                            }
+                            if (Workspace.This.CameraModeViewModel.IsContinuous)
+                            {
+                                Workspace.This.CameraModeViewModel.ExecuteStopContinuousCommand(null);
+                            }
+                            Workspace.This.MotorIsAlive = false;
+                            Workspace.This.ScanIsAlive = false;
+                            Workspace.This.Scanner_Camera_IsAlive = false;
+                            FrontDoorOpenMonitoring_ChemiMode();
+                        }
+                    }
+                    else
+                    {
+                        if (Workspace.This.CameraModeViewModel.IsChemiMode)//在Chemi模式
+                        {
+                            _TopMagneticState = value;
+                            Workspace.This.TopMagneticStatus = (bool)_TopMagneticState;
+                            CloseMessageBox_ChemiMode();
+                            FrontDoorCloseMonitoring_ChemiMode();
                         }
                     }
                     _TopMagneticState = value;
@@ -195,9 +222,11 @@ namespace Azure.ScannerEUI.ViewModel
                         }
                         else
                         {
+                            Workspace.This.Scanner_Camera_IsAlive = false;
                             Workspace.This.MotorIsAlive = false;
                             Workspace.This.ScanIsAlive = false;
                             Workspace.This.DisconnectDeviceEnable = false;
+                            Workspace.This.CameraModeViewModel.IsCameraEnabled = false;
                             //Workspace.This.EthernetController.SetLedBarMarquee(LEDBarChannel.LEDBarGreen, 9, false);
                             MessageBox.Show("System is detected power off, please power on the system and restart the GUI software");
                             Workspace.This.Owner.Dispatcher.BeginInvoke((Action)delegate
@@ -795,6 +824,66 @@ namespace Azure.ScannerEUI.ViewModel
                     MessageBoxResult boxResult = MessageBoxResult.None;
                     boxResult = MessageBox.Show(window, "Please close the front door and then reboot the system!", "Warning", MessageBoxButton.OK);
                     Workspace.This.CloseAppliction();
+                });
+            }
+            Thread td_msg = new Thread(msgSend);
+            td_msg.Start();
+        }
+        //前门关闭后，监测相机是否存在
+        //The front door is open and software is not allowed to be opened.
+        public void FrontDoorCloseMonitoring_ChemiMode()
+        {
+            void msgSend()
+            {
+                Application.Current.Dispatcher.Invoke((Action)delegate
+                {
+                    Workspace.This.IsLoading(true, "Searching for camera. Please wait...");
+                    while (!Workspace.This.CameraController.Initialize())
+                    {
+                        Workspace.This.RaisePropertyChanged_TopMagneticStatus();
+                        Thread.Sleep(1000);
+                    }
+                    //获取所有IV板子的信息
+                    //Get information about all IV boards
+                    Workspace.This.EthernetController.GetAllIvModulesInfo();
+                    //获取所有通道激光信息
+                    //Get all channel laser information
+                    Workspace.This.EthernetController.GetAllLaserModulseInfo();
+                    Workspace.This.CameraModeViewModel.ReCameraParameter();
+                    Workspace.This.MotorIsAlive = true;
+                    Workspace.This.ScanIsAlive = true;
+                    Workspace.This.Scanner_Camera_IsAlive = true;
+                    Workspace.This.IsLoading(false, "Searching for camera. Please wait...");
+                });
+            }
+            Thread td_msg = new Thread(msgSend);
+            td_msg.Start();
+        }
+        public void CloseMessageBox_ChemiMode()
+        {
+            void msgSend()
+            {
+                Application.Current.Dispatcher.Invoke((Action)delegate
+                {
+                    Thread.Sleep(1000);
+                    mbw.Hide();
+                });
+            }
+            Thread td_msg = new Thread(msgSend);
+            td_msg.Start();
+        }
+        //在Chemi模式下打开前门后弹框提醒，直到弹框关闭
+        public void FrontDoorOpenMonitoring_ChemiMode()
+        {
+            void msgSend()
+            {
+                Application.Current.Dispatcher.Invoke((Action)delegate
+                {
+                    while (TopMagneticState==true)
+                    {
+                        Thread.Sleep(500);
+                        mbw.ShowDialog();
+                    }
                 });
             }
             Thread td_msg = new Thread(msgSend);

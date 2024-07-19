@@ -11663,6 +11663,26 @@ namespace Azure.Image.Processing
             return bmImage;
         }
 
+        public static BitmapImage ConvertCameraWriteableBitmapToBitmapImage(WriteableBitmap wbm)
+        {
+            BitmapImage bmImage = new BitmapImage();
+            using (MemoryStream stream = new MemoryStream())
+            {
+                TiffBitmapEncoder encoder = new TiffBitmapEncoder();
+                encoder.Compression = TiffCompressOption.Lzw;
+                encoder.Frames.Add(BitmapFrame.Create(wbm));
+                encoder.Save(stream);
+                bmImage.BeginInit();
+                bmImage.CacheOption = BitmapCacheOption.OnLoad;
+                bmImage.StreamSource = stream;
+                bmImage.DecodePixelHeight = wbm.PixelHeight / 2;
+                bmImage.DecodePixelWidth = wbm.PixelWidth / 2;
+                bmImage.EndInit();
+                bmImage.Freeze();
+            }
+            return bmImage;
+        }
+
         public static BitmapImage BitmapToBitmapImage(System.Drawing.Bitmap bitmap)
         {
             MemoryStream ms = new MemoryStream();

@@ -245,6 +245,10 @@ namespace Azure.ScannerEUI.ViewModel
                                     }
                                 }
                             }
+                            if (!_ImageInfo.IsMultipleGrayscaleChannels)
+                            {
+                                _ImageInfo.IsMultipleGrayscaleChannels = IsMultipleGrayChannels;
+                            }
                         }
                         #endregion
                     }
@@ -1263,6 +1267,49 @@ namespace Azure.ScannerEUI.ViewModel
                         IsDirty = false;
                     }
                 }
+            }
+        }
+        public bool IsMultipleGrayChannels
+        {
+            get
+            {
+                bool bResult = false;
+
+                if (_Image != null)
+                {
+                    if (_Image.Format.BitsPerPixel == 24 || _Image.Format.BitsPerPixel == 32 ||
+                         _Image.Format.BitsPerPixel == 48 || _Image.Format.BitsPerPixel == 64)
+                    {
+                        int nGrayChannels = 0;
+
+                        if (_ImageInfo.IsRedChannelAvail && _ImageInfo.RedChannel.ColorChannel == ImageChannelType.Gray)
+                        {
+                            nGrayChannels++;
+                        }
+                        if (_ImageInfo.IsGreenChannelAvail && _ImageInfo.GreenChannel.ColorChannel == ImageChannelType.Gray)
+                        {
+                            nGrayChannels++;
+                        }
+                        if (_ImageInfo.IsBlueChannelAvail && _ImageInfo.BlueChannel.ColorChannel == ImageChannelType.Gray)
+                        {
+                            nGrayChannels++;
+                        }
+                        if (_ImageInfo.IsGrayChannelAvail && _ImageInfo.GrayChannel.ColorChannel == ImageChannelType.Gray)
+                        {
+                            nGrayChannels++;
+                        }
+
+                        bResult = nGrayChannels > 1;
+                        if (bResult)
+                        {
+                            // Currently only 2 gray channels are allowed
+                            // The image data are in the red and green channel
+                            _ImageInfo.IsDisplayBlueChannel = false;
+                        }
+                    }
+                }
+
+                return bResult;
             }
         }
 

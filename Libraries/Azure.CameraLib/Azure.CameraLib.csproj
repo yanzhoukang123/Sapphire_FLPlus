@@ -51,5 +51,11 @@
     <Compile Include="toupcam.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Azure.Image.Processing\Azure.Image.Processing.csproj">
+      <Project>{AEB73D39-8F98-4B1E-83F9-B50477299774}</Project>
+      <Name>Azure.Image.Processing</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

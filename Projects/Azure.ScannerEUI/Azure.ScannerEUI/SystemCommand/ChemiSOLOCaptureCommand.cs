@@ -186,7 +186,15 @@ namespace Azure.ScannerEUI.SystemCommand
                 {
                     _ActiveCamera.ChangeTriggerMode(0);
                 }
-                throw new Exception("Image capture error.", ex);
+                if (ex.Message == "AE ERROR: Signal too weak!")
+                {
+                    throw new Exception("AE ERROR: Signal too weak!", ex);
+                }
+                else
+                {
+                    throw new Exception("Image capture error.", ex);
+                }
+
             }
             finally
             {
@@ -247,10 +255,14 @@ namespace Azure.ScannerEUI.SystemCommand
                     _imageInfo.GainValue = _Parameter.chemiimagegain;
                     _imageInfo.BinFactor = _Parameter.pixelbin;
                     DateTime dateTime = DateTime.Now;
-                    double Sec = exposuretime * _ActiveCamera.USConvertMS * _ActiveCamera.USConvertMS;
+                    double Sec = exposuretime / _ActiveCamera.USConvertMS;
                     CompletionEstimate?.Invoke(this, dateTime, Sec);
                     CommandStatus?.Invoke(this, "Capturing image....");
                     writeableBitmap = CaptureChemiImage(exposuretime, LightCode);
+                    if (writeableBitmap.CanFreeze)
+                    {
+                        writeableBitmap.Freeze();
+                    }
                     ImageReceived(writeableBitmap, _imageInfo, _Parameter.name + ".tif");
                 }
                 else //EDR

@@ -1229,17 +1229,18 @@ namespace Azure.ScannerEUI.ViewModel
             _ZMotorSubdivision = SettingsManager.ConfigSettings.ZMotorSubdivision;
             _WMotorSubdivision = SettingsManager.ConfigSettings.WMotorSubdivision;
 
-            _XMaxValue = SettingsManager.ConfigSettings.XMaxValue;
-            if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard)//HW1.2.0.0
-            {
-                _XMaxValue = SettingsManager.ConfigSettings.Plus_XMaxValue;
-            }
+            _XMaxValue = SettingsManager.ConfigSettings.Plus_XMaxValue;
+            //_XMaxValue = SettingsManager.ConfigSettings.XMaxValue;
+            //if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard)//HW1.2.0.0
+            //{
+            //    _XMaxValue = SettingsManager.ConfigSettings.Plus_XMaxValue;
+            //}
             _YMaxValue = SettingsManager.ConfigSettings.YMaxValue;
             _ZMaxValue = SettingsManager.ConfigSettings.ZMaxValue;
             _WMaxValue = SettingsManager.ConfigSettings.WMaxValue;
 
             if (_XMotorSubdivision > 0)
-                _LimitsXPlus = Math.Round(_XMaxValue / _XMotorSubdivision, 2); 
+                _LimitsXPlus = Math.Round(_XMaxValue / _XMotorSubdivision, 2);
             if (_YMotorSubdivision > 0)
                 _LimitsYPlus = Math.Round(_YMaxValue / _YMotorSubdivision, 2);
             if (_ZMotorSubdivision > 0)
@@ -1345,7 +1346,7 @@ namespace Azure.ScannerEUI.ViewModel
             _MotionController.SetMotionPolarities(xPolarity, yPolarity, zPolarity, wPolarity);
 
             Workspace.This.MotorVM.InitMotorControls();
-        
+
             //MotionController.HomeMotion(Avocado.EthernetCommLib.MotorTypes.X | Avocado.EthernetCommLib.MotorTypes.Y | Avocado.EthernetCommLib.MotorTypes.Z | Avocado.EthernetCommLib.MotorTypes.W,
             //    new int[] { 256, 256, 256, 256 },
             //    new int[] { (int)_MotorXSpeed, (int)_MotorYSpeed, (int)_MotorZSpeed, (int)_MotorWSpeed },
@@ -1354,7 +1355,8 @@ namespace Azure.ScannerEUI.ViewModel
             //    false);
         }
 
-        public bool HomeXYZmotor() {
+        public bool HomeXYZmotor()
+        {
             try
             {
                 if (!_MotionController.CrntState[EthernetCommLib.MotorTypes.X].AtHome)
@@ -1365,7 +1367,7 @@ namespace Azure.ScannerEUI.ViewModel
                 {
                     ExecuteHomeCommand(MotorType.Y);
                 }
-                if  (!_MotionController.CrntState[EthernetCommLib.MotorTypes.Z].AtHome)
+                if (!_MotionController.CrntState[EthernetCommLib.MotorTypes.Z].AtHome)
                 {
                     ExecuteHomeCommand(MotorType.Z);
                 }
@@ -1387,7 +1389,7 @@ namespace Azure.ScannerEUI.ViewModel
 
             Workspace.This.ApdVM.LIDIsOpen = Workspace.This.EthernetController.LidIsOpen;
             //HW1.0.0.0 or 1.2.0.0
-            if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Standard|| Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard)
+            if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Standard || Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard)
             {
                 //TopCoverLock 顶盖状态(硬件版本V1.1)                         Top cover status (hardware version V1.1)
                 //TopMagneticState 前盖状态(硬件版本V1.1)                     Front cover status (hardware version V1.1)
@@ -1407,6 +1409,13 @@ namespace Azure.ScannerEUI.ViewModel
         public MotionController MotionController
         {
             get { return _MotionController; }
+        }
+
+        public void RaisePropertyChanged_Pos()
+        {
+            RaisePropertyChanged("CurrentXPos");
+            RaisePropertyChanged("CurrentYPos");
+            RaisePropertyChanged("CurrentZPos");
         }
     }
 }

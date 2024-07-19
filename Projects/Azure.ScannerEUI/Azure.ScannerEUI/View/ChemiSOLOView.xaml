@@ -144,7 +144,7 @@
                 <local:EDRSettings></local:EDRSettings>
             </Grid>
         </Grid>
-        <Grid Grid.Row="7" Grid.Column="1">
+        <Grid Grid.Row="7" Grid.Column="1" IsEnabled="False">
             <Grid Grid.Column="0">
                 <Button Grid.Column="0" x:Name="_CaptureButton"
                     Content="START"

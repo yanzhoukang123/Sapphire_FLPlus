@@ -176,7 +176,14 @@ namespace Azure.ScannerEUI.View
                 viewModel.Image.Format == PixelFormats.Rgb24 ||
                 viewModel.Image.Format == PixelFormats.Rgb48)
             {
-                viewModel.PixelIntensity = string.Format("(R: {0} G: {1} B: {2})", iRedData, iGreenData, iBlueData);
+                if (viewModel.IsMultipleGrayChannels)
+                {
+                    viewModel.PixelIntensity = string.Format("(CH1: {0} CH2: {1})", iRedData, iGreenData);
+                }
+                else
+                {
+                    viewModel.PixelIntensity = string.Format("(R: {0} G: {1} B: {2})", iRedData, iGreenData, iBlueData);
+                }
             }
             else if (viewModel.Image.Format == PixelFormats.Rgba64)
             {

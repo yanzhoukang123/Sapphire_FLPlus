@@ -133,6 +133,8 @@ namespace Azure.ScannerEUI.ViewModel
         private bool _IsCapturing = false;
         private bool _IsContinuous = false;
 		private bool _MotorIsAlive = false;
+        private bool _Scanner_Camera_IsAlive = false;
+        
 
         private string _DoorStatus = string.Empty;
 
@@ -341,6 +343,19 @@ namespace Azure.ScannerEUI.ViewModel
         public string ProductName { get; set; }
         public string AppDataPath { get; set; }
         public string ProductVersion { get; set; }
+        public bool Scanner_Camera_IsAlive
+        {
+            get
+            {
+                return _Scanner_Camera_IsAlive;
+            }
+            set
+            {
+                _Scanner_Camera_IsAlive = value;
+                RaisePropertyChanged("Scanner_Camera_IsAlive");
+            }
+
+        }
 
         public bool MotorIsAlive
         {
@@ -773,9 +788,11 @@ namespace Azure.ScannerEUI.ViewModel
                             Application.Current.Dispatcher.Invoke((Action)delegate
                             {
                                 StopWaitAnimation();
+                                Scanner_Camera_IsAlive = true;
                                 Workspace.This.MotorIsAlive = true;
                                 ScanIsAlive = true;
                                 DisconnectDeviceEnable = true;
+                                This.CameraModeViewModel.IsCameraEnabled = true;
                                 _IsLoading = false;
                             });
                             //If the firmware version is 1.1.0.0 and the LED version number is "254.255.255.255", perform the following operation
@@ -805,6 +822,7 @@ namespace Azure.ScannerEUI.ViewModel
                                 Workspace.This.NewParameterVM.VesionVisFlag = Visibility.Hidden;
                                 Workspace.This.VesionVisFlag = Visibility.Hidden;
                                 Workspace.This.OldVesionVisFlag = Visibility.Visible;
+                                Scanner_Camera_IsAlive = true;
                                 Workspace.This.MotorIsAlive = true;
                                 ScanIsAlive = true;
                             }
@@ -813,6 +831,10 @@ namespace Azure.ScannerEUI.ViewModel
                                 IsTopMagneticOpen = false;
                                 IsTopMagneticClose = false;
                                 Workspace.This.OldVesionVisFlag = Visibility.Hidden;
+                                if (!This.CameraController.IsCameraConnected)//相机没有连接时
+                                {
+                                    Scanner_Camera_IsAlive = false;
+                                }
                                 ScanIsAlive = false;
                                 this.MotorIsAlive = false;
                                 if (Workspace.This.ScannerVM.HWversion == HWversion_Standard)//HW1.1.0.0
@@ -838,6 +860,7 @@ namespace Azure.ScannerEUI.ViewModel
                             Workspace.This.NewParameterVM.VesionVisFlag = Visibility.Hidden;
                             Workspace.This.VesionVisFlag = Visibility.Hidden;
                             Workspace.This.OldVesionVisFlag = Visibility.Visible;
+                            Scanner_Camera_IsAlive = true;
                             Workspace.This.MotorIsAlive = true;
                             ScanIsAlive = true;
                         }
@@ -859,6 +882,10 @@ namespace Azure.ScannerEUI.ViewModel
                                 IsTopMagneticOpen = false;
                                 IsTopMagneticClose = false;
                                 Workspace.This.OldVesionVisFlag = Visibility.Hidden;
+                                if (!This.CameraController.IsCameraConnected)//相机没有连接时
+                                {
+                                    Scanner_Camera_IsAlive = false;
+                                }
                                 ScanIsAlive = false;
                                 this.MotorIsAlive = false;
                             }
@@ -880,6 +907,10 @@ namespace Azure.ScannerEUI.ViewModel
                                 IsTopMagneticOpen = false;
                                 IsTopMagneticClose = false;
                                 Workspace.This.OldVesionVisFlag = Visibility.Hidden;
+                                if (!This.CameraController.IsCameraConnected)//相机没有连接时
+                                {
+                                    Scanner_Camera_IsAlive = false;
+                                }
                                 ScanIsAlive = false;
                                 this.MotorIsAlive = false;
                                 //关闭RGB灯光,Turn off RGB lights
@@ -1190,6 +1221,109 @@ namespace Azure.ScannerEUI.ViewModel
             Thread td_msg = new Thread(msgSend);
             td_msg.Start();
         }
+        public void Camera_IsLoading(bool Status)
+        {
+            This.CameraModeViewModel.IsCameraEnabled = false;
+            DisconnectDeviceEnable = false;
+            Scanner_Camera_IsAlive = false;
+            StartWaitAnimation("Please wait …");
+            _IsLoading = true;
+        }
+        public void IsLoading(bool Status,string message)
+        {
+            Application.Current.Dispatcher.Invoke((Action)delegate
+            {
+                if (Status)
+                {
+                    StartWaitAnimation(message);
+                }
+                else
+                {
+                    StopWaitAnimation();
+                }
+                _IsLoading = Status;
+            });
+        }
+        public void RaisePropertyChanged_TopMagneticStatus()
+        {
+            RaisePropertyChanged("TopMagneticStatus");
+        }
+        public void Camera_MonitorOpticalModule()
+        {
+            void msgSend()
+            {
+                Application.Current.Dispatcher.Invoke((Action)delegate
+                {
+                    StartWaitAnimation("Please wait …");
+                    _IsLoading = true;
+                    int index = 0;
+                    //其中一个没有正常下电，就继续等待，5秒后跳出，True indicates that the relay is still powered on，如果都是False就直接跳出，
+                    // //One of them did not power down normally, so it continued to wait for 5 seconds before jumping out. True indicators that the relay is still powered on, if all are false, it will jump out directly,
+                    while (Workspace.This.EthernetController.OpticalModulePowerStatus || Workspace.This.EthernetController.OpticalModulePowerMonitor)
+                    {
+                        Thread.Sleep(500);
+                        index++;
+                        if (index == 10)
+                        {
+                            break;
+                        }
+                    }
+                    if (index == 10)
+                    {
+                        Workspace.This.EthernetController.GetRelayStatus();//获取“光学模块电源继电器状态”和“TEC电源继电器检测状态”Get "Optical Module Power Relay Status" and "TEC Power Relay Detection Status".
+                        Thread.Sleep(1000);
+                        StopWaitAnimation();
+                        _IsLoading = false;
+                        string title = "";
+                        string message = "";
+                        if (This.EthernetController.OpticalModulePowerRelay)
+                        {
+                            //This situation is due to the optical module relay not being properly powered off, which is an error. We need to directly close the software
+                            title = "Error";
+                            message = "Failed to turn off modules' power";
+                            Window window = new Window();
+                            window.Topmost = true;
+                            MessageBox.Show(window, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+                            Workspace.This.Owner.Dispatcher.BeginInvoke((Action)delegate
+                            {
+                                Workspace.This.CloseAppliction();
+                            });
+                        }
+                        else if (!This.EthernetController.OpticalModulePowerRelay && This.EthernetController.TECPowerRelayDetection)
+                        {
+                            //TEC power relay detected failure(Alarm)
+                            //In this situation, one TEC relay is not powered off, just a pop-up reminder is needed
+                            title = "Alarm";
+                            message = "Failed to turn off modules' power";
+                            Window window = new Window();
+                            window.Topmost = true;
+                            MessageBox.Show(window, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                        else if (!This.EthernetController.OpticalModulePowerRelay && !This.EthernetController.TECPowerRelayDetection)
+                        {
+                            //已知光学模块没有成功下电，但是获取的两个继电器状态是下电，这种可能是设备原因，我们需要直接关闭软件，并重启设备。
+                            ////It is known that the optical module has not been successfully powered off, but the two relay states obtained are powered off, which may be due to equipment reasons. It is necessary to directly shut down the software and restart the device.
+                            title = "Error";
+                            message = "Failed to turn off modules' power";
+                            Window window = new Window();
+                            window.Topmost = true;
+                            MessageBox.Show(window, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+                            Workspace.This.Owner.Dispatcher.BeginInvoke((Action)delegate
+                            {
+                                Workspace.This.CloseAppliction();
+                            });
+                        }
+                    }
+                    else
+                    {
+                        StopWaitAnimation();
+                        _IsLoading = false;
+                    }
+                });
+            }
+            Thread td_msg = new Thread(msgSend);
+            td_msg.Start();
+        }
         //Pop up a message pop-up message box without interrupting program execution （HW Version 1.1.0.0）
         private void DisconnectDevice()
         {
@@ -1295,9 +1429,11 @@ namespace Azure.ScannerEUI.ViewModel
         {
             Application.Current.Dispatcher.Invoke((Action)delegate
             {
+                This.CameraModeViewModel.IsCameraEnabled = IsDisable;
                 DisconnectDeviceEnable = IsDisable;
                 ScanIsAlive = IsDisable;
                 this.MotorIsAlive = IsDisable;
+                Scanner_Camera_IsAlive = IsDisable;
             });
         }
         //Optical module pre power on tooling（HW Version 1.1.0.0）
@@ -7341,6 +7477,9 @@ namespace Azure.ScannerEUI.ViewModel
 
                 if (estimatedCaptureTimeInSec > 0.0)
                 {
+                    //LED Process
+                    This.CameraModeViewModel.CameraLed_Process += This.CameraModeViewModel.Step;
+                    Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(This.CameraModeViewModel.CameraLed_Process));
                     estTimeRemain = Math.Max(0, estimatedCaptureTimeInSec - elapsedTime.TotalSeconds);
                     percentCompete = 100.0 * elapsedTime.TotalSeconds / estimatedCaptureTimeInSec;
                 }

@@ -283,6 +283,9 @@
     <Compile Include="View\LasersControl.xaml.cs">
       <DependentUpon>LasersControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="View\MessageBoxWindow.xaml.cs">
+      <DependentUpon>MessageBoxWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\MultipleExposureControl.xaml.cs">
       <DependentUpon>MultipleExposureControl.xaml</DependentUpon>
     </Compile>
@@ -520,6 +523,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="View\LasersControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\MessageBoxWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

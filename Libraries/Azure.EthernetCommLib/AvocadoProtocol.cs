@@ -160,6 +160,8 @@ namespace Azure.EthernetCommLib
             PromptForPressingShutdown=0x15,  //图像扫描过程中按下前面板关机键  Press the front panel shutdown button during image scanning
             Register2Control = 0x16, //继电器2控制
             RelayStatus = 0x17, //b0:LED Bar继电器控制；b1:光学模块电源继电器检测(失败)；b2:TEC电源继电器检测(警告)；1->继电器闭合；0->继电器断开----//b0: LED Bar relay control; b1: Optical module power relay detection; b2: TEC power relay detection; 1->relay closed; 0->relay disconnected
+            ChemiMode=0x18,
+            
             // Motor properties
             StartSpeed = 0x01,
             TopSpeed,
@@ -2051,6 +2053,18 @@ namespace Azure.EthernetCommLib
             _SendingFrame.Command = CommandTypes.Write;
             _SendingFrame.System = SubSys.Mainboard;
             _SendingFrame.StartingProperty = Properties.Register2Control;
+            _SendingFrame.PropertyNums = 1;
+            _SendingFrame.DataLength = 2;
+            _SendingFrame.DataField = new List<byte>();
+            _SendingFrame.DataField.Add((byte)(sige));
+            _SendingFrame.DataField.Add(0);
+            return _SendingFrame.GetBytes();
+        }
+        public static byte[] SetCurrentMode(int sige)//1=CHEMI
+        {
+            _SendingFrame.Command = CommandTypes.Write;
+            _SendingFrame.System = SubSys.Mainboard;
+            _SendingFrame.StartingProperty = Properties.ChemiMode;
             _SendingFrame.PropertyNums = 1;
             _SendingFrame.DataLength = 2;
             _SendingFrame.DataField = new List<byte>();

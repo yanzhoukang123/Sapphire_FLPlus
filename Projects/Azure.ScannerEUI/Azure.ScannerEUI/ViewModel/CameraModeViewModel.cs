@@ -1,5 +1,6 @@
 ﻿using Azure.CommandLib;
 using Azure.Configuration.Settings;
+using Azure.EthernetCommLib;
 using Azure.Image.Processing;
 using Azure.ImagingSystem;
 using Azure.WPF.Framework;
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -67,37 +69,49 @@ namespace Azure.ScannerEUI.ViewModel
         private bool _IsContinuous = false;
         private bool _IsCameraPanel = true;
         private Thread _ModeSwitch = null;
-
+        private Thread _LEDFlicker = null;
+        private Thread _LEDBlueProcess = null;
         private DispatcherTimer timer_ = null;
         private ImageCaptureCommand _ImageCaptureCommand = null;
         private ImagingLiveCommand _LiveModeCommand = null;
+        private bool _IsChemiMode = false;
+        private double LEDTime = 0;
+        public double Step = 0;
+        public double CameraLed_Process = 0;
 
         #endregion
 
         #region Public data
         public CameraModeViewModel()
         {
+
+            _LEDFlicker = new Thread(LEDFlickerMethod);
+            _LEDFlicker.IsBackground = true;
+            _LEDFlicker.Start();
             _BinningOptions = SettingsManager.ConfigSettings.BinningFactorOptions;
             _GainOptions = SettingsManager.ConfigSettings.GainOptions;
-            //Select binning 1x1
-            if (_BinningOptions != null && _BinningOptions.Count > 0)
-            {
-                SelectedBinning = _BinningOptions[0];
-            }
-            //Select gain: 1
-            if (_GainOptions != null && GainOptions.Count > 0)
-            {
-                SelectedGain = _GainOptions[0];
-            }
             _DarkFrameCorrOptions.Add(true, "Enable");
             _DarkFrameCorrOptions.Add(false, "Disabled");
             timer_ = new DispatcherTimer() { Interval = new TimeSpan(0, 0, 1) };
             timer_.Tick += (sender, e) =>
             {
-               CcdTemp = Workspace.This.CameraController.CcdTemp;
-               IsCameraConnected = Workspace.This.CameraController.IsCameraConnected;
+                CcdTemp = Workspace.This.CameraController.CcdTemp;
+                IsCameraConnected = Workspace.This.CameraController.IsCameraConnected;
             };
             timer_.Start();
+        }
+        void LEDFlickerMethod()
+        {
+            while (true)
+            {
+                if (IsContinuous)
+                {
+                    Workspace.This.EthernetController.SetLed(0);
+                    Thread.Sleep(500);
+                    Workspace.This.EthernetController.SetLed(207);//蓝色
+                }
+                Thread.Sleep(1000);
+            }
         }
         public decimal ExposureTime
         {
@@ -318,6 +332,18 @@ namespace Azure.ScannerEUI.ViewModel
             {
                 _CameraMode = value;
                 RaisePropertyChanged("CameraMode");
+            }
+        }
+        public bool IsChemiMode
+        {
+            get
+            {
+                return _IsChemiMode;
+            }
+            set
+            {
+                _IsChemiMode = value;
+                RaisePropertyChanged("IsChemiMode");
             }
         }
         public bool IsCameraEnabled
@@ -651,6 +677,14 @@ namespace Azure.ScannerEUI.ViewModel
                 uint us_exposuretime = (uint)((double)ExposureTime * Workspace.This.CameraController.USConvertMS);
                 ImageChannelSettings imagingChannel = new ImageChannelSettings();
                 imagingChannel.Exposure = ((double)ExposureTime / Workspace.This.CameraController.USConvertMS); // exposure time in seconds
+                LEDTime= ((double)ExposureTime / Workspace.This.CameraController.USConvertMS);
+                if (LEDTime >= 3)
+                {
+                    CameraLed_Process = 0;
+                    Step = (double)100 / (double)LEDTime;
+                    Workspace.This.EthernetController.SetLedBarProgress(0);//全灭
+                    Workspace.This.EthernetController.SetLed(207);//蓝色
+                }
                 imagingChannel.BinningMode = SelectedBinning.VerticalBins;
                 imagingChannel.AdGain = SelectedGain.Value;
 
@@ -670,6 +704,9 @@ namespace Azure.ScannerEUI.ViewModel
                 _ImageCaptureCommand.CommandStatus += new ImageCaptureCommand.CommandStatusHandler(_ImageCaptureCommand_CommandStatus);
                 _ImageCaptureCommand.CompletionEstimate += new ImageCaptureCommand.CommandCompletionEstHandler(_ImageCaptureCommand_CompletionEstimate);
                 _ImageCaptureCommand.Start();
+                //_LEDBlueProcess = new Thread(LedBlueProcessBar);
+                //_LEDBlueProcess.IsBackground = true;
+                //_LEDBlueProcess.Start();
                 IsCapturing = true;
                 Workspace.This.CreateDarkmastersViewModel.IsCreatingDarkMasterPanel = false;
                 Workspace.This.CreateFlatsViewModel.IsCreatingFlatsPanel = false;
@@ -705,13 +742,14 @@ namespace Azure.ScannerEUI.ViewModel
         {
             Workspace.This.Owner.Dispatcher.BeginInvoke((Action)delegate
             {
+                IsCapturing = false;
+                //_LEDBlueProcess.Abort();
                 Workspace.This.CaptureCountdownTimer.Stop();
                 Workspace.This.CreateDarkmastersViewModel.IsCreatingDarkMasterPanel = true;
                 Workspace.This.CreateFlatsViewModel.IsCreatingFlatsPanel = true;
                 IsCameraEnabled = true;
-                IsCapturing = false;
                 RaisePropertyChanged("IsEnabledControl");
-
+                LedGreenBrightness();
                 ImageCaptureCommand imageCaptureThread = (sender as ImageCaptureCommand);
 
                 if (exitState == ThreadBase.ThreadExitStat.None)
@@ -789,6 +827,8 @@ namespace Azure.ScannerEUI.ViewModel
             // Abort image capture thread
             if (_ImageCaptureCommand != null)
             {
+                //_LEDBlueProcess.Abort();
+                LedGreenBrightness();
                 Workspace.This.CreateDarkmastersViewModel.IsCreatingDarkMasterPanel = true;
                 Workspace.This.CreateFlatsViewModel.IsCreatingFlatsPanel = true;
                 IsCameraEnabled = true;
@@ -843,6 +883,7 @@ namespace Azure.ScannerEUI.ViewModel
                 _LiveModeCommand.LiveImageReceived += new ImagingLiveCommand.ImageReceivedHandler(_LiveModeCommand_LiveImageReceived);
                 _LiveModeCommand.Completed += new ThreadBase.CommandCompletedHandler(_LiveModeCommand_Completed);
                 _LiveModeCommand.Start();
+                Workspace.This.EthernetController.SetLedBarProgress(0x64);//全亮
                 IsContinuous = true;
                 Workspace.This.CreateDarkmastersViewModel.IsCreatingDarkMasterPanel = false;
                 Workspace.This.CreateFlatsViewModel.IsCreatingFlatsPanel = false;
@@ -920,6 +961,7 @@ namespace Azure.ScannerEUI.ViewModel
         {
             if (_LiveModeCommand != null)
             {
+                LedGreenBrightness();
                 Workspace.This.CreateDarkmastersViewModel.IsCreatingDarkMasterPanel = true;
                 Workspace.This.CreateFlatsViewModel.IsCreatingFlatsPanel = true;
                 IsCameraEnabled = true;
@@ -953,11 +995,49 @@ namespace Azure.ScannerEUI.ViewModel
             _ModeSwitch.IsBackground = true;
             _ModeSwitch.Start();
         }
-
+        private void IsMotorBusy()
+        {
+            void msgSend()
+            {
+                Workspace.This.IsLoading(true, "Please wait...");
+                Workspace.This.MotorIsAlive = false;
+                Workspace.This.ScanIsAlive = false;
+                Workspace.This.Scanner_Camera_IsAlive = false;
+                while (Workspace.This.MotorVM.MotionController.CrntState[EthernetCommLib.MotorTypes.X].IsBusy ||
+                       Workspace.This.MotorVM.MotionController.CrntState[EthernetCommLib.MotorTypes.Y].IsBusy)
+                {
+                    Workspace.This.MotorVM.RaisePropertyChanged_Pos();
+                    Thread.Sleep(500);
+                }
+                Workspace.This.IsLoading(false, "Please wait...");
+                CameraMode = "ScannerMode";
+                Workspace.This.IsScanner_Mode = Visibility.Hidden;
+                Workspace.This.IsCamera_Mode = Visibility.Visible;
+                Workspace.This.ScannerModelWindowWidth = 400;
+                Workspace.This.IsMotorEnabled = false;
+                Workspace.This.MotorIsAlive = true;
+                Workspace.This.ScanIsAlive = true;
+                Workspace.This.Scanner_Camera_IsAlive = true;
+                if (Workspace.This.CameraController.GetRoi())
+                {
+                    Left = Workspace.This.CameraController.Left;
+                    Top = Workspace.This.CameraController.Top;
+                    Width = Workspace.This.CameraController.Width;
+                    Height = Workspace.This.CameraController.Height;
+                }
+            }
+            Thread td_msg = new Thread(msgSend);
+            td_msg.Start();
+        }
         private void BatchProcessMethod()
         {
+            if (!GetEthernetSpeed())
+            {
+                MessageBox.Show("Requires PC with 1GB Ethernet speed!");
+                return;
+            }
             if (CameraMode == "CameraMode")
-            {                
+            {
                 if (!Workspace.This.CameraController.Initialize())
                 {
                     MessageBox.Show("No camera found.");
@@ -969,7 +1049,7 @@ namespace Azure.ScannerEUI.ViewModel
                 ExposureTime = Workspace.This.CameraController.ExposureTime_MIN;
                 string caption = "Switch to camera mode...";
                 string message = "Switch to the camera mode requires the Y stage to move.\n" +
-                                 "It will first home the Y motor then move it "+ AbsXPos + "mm.\n" +
+                                 "It will first home the Y motor then move it " + AbsYPos + "mm.\n" +
                                  "Press \"OK\" to proceed";
                 Application.Current.Dispatcher.Invoke((Action)delegate
                 {
@@ -980,54 +1060,55 @@ namespace Azure.ScannerEUI.ViewModel
                     IsCameraConnected = Workspace.This.CameraController.IsCameraConnected;
                     if (IsCameraConnected)
                     {
-                        Workspace.This.MotorVM.ExecuteHomeCommand(MotorType.X);
-                        Workspace.This.MotorVM.ExecuteHomeCommand(MotorType.Y);
-                        while (!Workspace.This.MotorVM.MotionController.CrntState[EthernetCommLib.MotorTypes.X].AtHome ||
-                               !Workspace.This.MotorVM.MotionController.CrntState[EthernetCommLib.MotorTypes.Y].AtHome)
-                        {
-                            Thread.Sleep(500);
-                        }
+                        Workspace.This.IVVM.ResetTemperatureAlarmsSwitch(false);  //关闭温度报警  close temperature alarm
+                        Workspace.This.EthernetController.SetCurrentMode(1);//告诉FPGA进入到Chemi模式
+                        //Workspace.This.NewParameterVM.FanReserveTemperature = 40;
+                        //Workspace.This.NewParameterVM.WriteOtherSettings();
                         Workspace.This.MotorVM.AbsXPos = AbsXPos;
                         Workspace.This.MotorVM.ExecuteGoAbsPosCommand(MotorType.X);
                         Workspace.This.MotorVM.AbsYPos = AbsYPos;
                         Workspace.This.MotorVM.ExecuteGoAbsPosCommand(MotorType.Y);
-                        while (Workspace.This.MotorVM.MotionController.CrntState[EthernetCommLib.MotorTypes.X].IsBusy ||
-                               Workspace.This.MotorVM.MotionController.CrntState[EthernetCommLib.MotorTypes.Y].IsBusy)
+                        Thread.Sleep(1000);
+                        IsMotorBusy();
+                        //Select binning 1x1
+                        if (_BinningOptions != null && _BinningOptions.Count > 0)
                         {
-                            Thread.Sleep(500);
-
+                            SelectedBinning = _BinningOptions[0];
+                            Workspace.This.ChemiSOLOViewModel.SelectedBinning = _BinningOptions[0];
                         }
-                        CameraMode = "ScannerMode";
-                        Workspace.This.IsScanner_Mode = Visibility.Hidden;
-                        Workspace.This.IsCamera_Mode = Visibility.Visible;
-                        Workspace.This.ScannerModelWindowWidth = 400;
-                        Workspace.This.IsMotorEnabled = false;
-                        if (Workspace.This.CameraController.GetRoi())
+                        //Select gain: 1
+                        if (_GainOptions != null && GainOptions.Count > 0)
                         {
-                            Left = Workspace.This.CameraController.Left;
-                            Top = Workspace.This.CameraController.Top;
-                            Width = Workspace.This.CameraController.Width;
-                            Height = Workspace.This.CameraController.Height;
+                            SelectedGain = _GainOptions[0];
                         }
+                        IsChemiMode = true;
+                        //Workspace.This.EthernetController.SetShutdown(1);  //下电 optical module Power Down
+                        //if (Workspace.This.EthernetController.DevicePowerStatus)
+                        //{
+                        //    Workspace.This.Camera_MonitorOpticalModule();//Monitor whether the optical module is successfully powered off
+                        //}
                     }
                 });
             }
             else
             {
-                Workspace.This.CameraController.CloseCamera();
-                Workspace.This.MotorVM.ExecuteHomeCommand(MotorType.X);
-                Workspace.This.MotorVM.ExecuteHomeCommand(MotorType.Y);
-                while (!Workspace.This.MotorVM.MotionController.CrntState[EthernetCommLib.MotorTypes.X].AtHome ||
-                       !Workspace.This.MotorVM.MotionController.CrntState[EthernetCommLib.MotorTypes.Y].AtHome)
+                Application.Current.Dispatcher.Invoke((Action)delegate
                 {
-                    Thread.Sleep(500);
-                }
-                CameraMode = "CameraMode";
-                Workspace.This.IsCamera_Mode = Visibility.Hidden;
-                Workspace.This.IsScanner_Mode = Visibility.Visible;
-                Workspace.This.ScannerModelWindowWidth = 630;
-                Workspace.This.IsMotorEnabled = true;
-
+                    //Workspace.This.Camera_IsLoading(true);
+                    //Workspace.This.EthernetController.SetShutdown(0);  //上电 Optical module Power up
+                    //Workspace.This.NewParameterVM.FanReserveTemperature = 24;
+                    //Workspace.This.NewParameterVM.WriteOtherSettings();
+                    Workspace.This.IVVM.ResetTemperatureAlarmsSwitch(true);  //打开温度报警  open temperature alarm
+                    Workspace.This.CameraController.CloseCamera();
+                    CameraMode = "CameraMode";
+                    Workspace.This.IsCamera_Mode = Visibility.Hidden;
+                    Workspace.This.IsScanner_Mode = Visibility.Visible;
+                    Workspace.This.ScannerModelWindowWidth = 630;
+                    Workspace.This.IsMotorEnabled = true;
+                    Workspace.This.EthernetController.SetCurrentMode(0);//告诉FPGA结束Chemi模式
+                    IsChemiMode = false;
+                    Workspace.This.EstimatedTimeRemaining = string.Empty;
+                });
             }
         }
 
@@ -1037,6 +1118,107 @@ namespace Azure.ScannerEUI.ViewModel
         }
         #endregion
 
+        public void ReCameraParameter()
+        {
+            if (IsCameraConnected)
+            {
+                int Bins = SelectedBinning.HorizontalBins;
+                if (Bins == 1)
+                    Workspace.This.CameraController.SetBinning(Binning.Not_Binning);
+                if (Bins == 2)
+                    Workspace.This.CameraController.SetBinning(Binning.Fusion_Binning2x2);//
+                if (Bins == 3)
+                    Workspace.This.CameraController.SetBinning(Binning.Fusion_Binning3x3);//
+                if (Bins == 4)
+                    Workspace.This.CameraController.SetBinning(Binning.Fusion_Binning4x4);//
+                int Bin_Width = Workspace.This.CameraController.Width / Bins;
+                int Bin_Height = Workspace.This.CameraController.Height / Bins;
+                Workspace.This.CameraController.CaptureImage_Width = Bin_Width;
+                Workspace.This.CameraController.CaptureImage_Height = Bin_Height;
+                Workspace.This.CameraController.SetGain(SelectedGain.Value);
+
+                Workspace.This.CameraController.SetCCDTemp(CcdTempSetPoint);
+                Workspace.This.CameraController.SetRoi((uint)Left, (uint)Top, (uint)Width, (uint)Height);
+                if (Workspace.This.CameraController.GetRoi())
+                {
+                    Workspace.This.CameraController.Left = Left;
+                    Workspace.This.CameraController.Top = Top;
+                    Workspace.This.CameraController.Width = Width;
+                    Workspace.This.CameraController.Height = Height;
+                    int _Bin_Width = Workspace.This.CameraController.Width / Bins;
+                    int _Bin_Height = Workspace.This.CameraController.Height / Bins;
+                    Workspace.This.CameraController.CaptureImage_Width = _Bin_Width;
+                    Workspace.This.CameraController.CaptureImage_Height = _Bin_Height;
+                }
+            }
+        }
+
+        public bool GetEthernetSpeed()
+        {
+            NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface networkInterface in networkInterfaces)
+            {
+                if (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+                {
+                    //Console.WriteLine("接口名称: {0}", networkInterface.Name);
+                    //Console.WriteLine("速度: {0} bps", networkInterface.Speed);
+                    if (networkInterface.Speed >= 1000000000) //1GB 
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public void LedBlueProcessBar()
+        {
+            while (true)
+            {
+                if (IsCapturing&& LEDTime>2)
+                {
+                    double Step = (double)100 / (double)LEDTime;
+                    int process = 0;
+                    for (int i = 0; i < LEDTime; i++)
+                    {
+                        process += (int)Step;
+                        Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(process));
+                        Thread.Sleep(1000);
+                    }
+                    ////Console.WriteLine(DateTime.Now.ToString());
+                    //double process = (double)LEDTime / (double)100;
+                    //int sleeptime = (int)(process * 800);
+                    //for (int i = 0; i < 100; i++)
+                    //{
+                    //    Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(i));
+                    //    Thread.Sleep(sleeptime);
+                    //}
+                    return;
+                    //Console.WriteLine(DateTime.Now.ToString());
+                }
+                Thread.Sleep(10);
+            }
+        }
+        public void LedBlueProcessBar1()
+        {
+            double Step = (double)100 / (double)LEDTime;
+            int process = 0;
+            for (int i = 0; i < LEDTime; i++)
+            {
+                process += (int)Step;
+                Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(process));
+                Thread.Sleep(1000);
+            }
+        }
+        public void LedGreenBrightness()
+        {
+            Workspace.This.EthernetController.SetLed(175);//绿色
+            Workspace.This.EthernetController.SetLedBarProgress(0x64);//全亮
+        }
         public class DarkFrameCorrType
         {
             #region Public properties...

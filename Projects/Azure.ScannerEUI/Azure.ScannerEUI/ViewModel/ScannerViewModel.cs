@@ -1270,11 +1270,12 @@ namespace Azure.ScannerEUI.ViewModel
             _XMotorSubdivision = SettingsManager.ConfigSettings.XMotorSubdivision;
             _YMotorSubdivision = SettingsManager.ConfigSettings.YMotorSubdivision;
             _ZMotorSubdivision = SettingsManager.ConfigSettings.ZMotorSubdivision;
-            _XMaxValue = SettingsManager.ConfigSettings.XMaxValue;
-            if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard)//HW1.2.0.0
-            {
-                _XMaxValue = SettingsManager.ConfigSettings.Plus_XMaxValue;
-            }
+            _XMaxValue = SettingsManager.ConfigSettings.Plus_XMaxValue;
+            //_XMaxValue = SettingsManager.ConfigSettings.XMaxValue;
+            //if (Workspace.This.ScannerVM.HWversion == Workspace.This.HWversion_Plus_Standard)//HW1.2.0.0
+            //{
+            //    _XMaxValue = SettingsManager.ConfigSettings.Plus_XMaxValue;
+            //}
             _YMaxValue = SettingsManager.ConfigSettings.YMaxValue;
             _ZMaxValue = SettingsManager.ConfigSettings.ZMaxValue;
             RaisePropertyChanged("ResolutionOptions");
@@ -1294,57 +1295,58 @@ namespace Azure.ScannerEUI.ViewModel
                 RaisePropertyChanged("SelectedQuality");
             }
             OnSpentTimeInit();//SpentTime
-            if (Workspace.This.ScannerVM.HWversion != Workspace.This.HWversion_Plus_Standard)//不是1.2.0.0版本，Not version 1.2.0.0
+            //if (Workspace.This.ScannerVM.HWversion != Workspace.This.HWversion_Plus_Standard)//不是1.2.0.0版本，Not version 1.2.0.0, 当新主板做好后打开这个注释
+            //{
+            //    XHomecoefficient = 310;
+            //    try
+            //    {
+            //        if (Workspace.This != null)
+            //        {
+            //            if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 11)
+            //            {
+            //                XHomecoefficient = 311;
+            //            }
+            //            else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 12)
+            //            {
+            //                XHomecoefficient = 312;
+            //            }
+            //            else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 13)
+            //            {
+            //                XHomecoefficient = 313;
+            //            }
+            //            //else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 14)
+            //            //{
+            //            //    _XHomecoefficient = 314;
+            //            //}
+            //            //else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 15)
+            //            //{
+            //            //    _XHomecoefficient = 315;
+            //            //}
+            //        }
+            //    }
+            //    catch
+            //    {
+            //    }
+            //}
+            //else
             {
-                XHomecoefficient = 310;
+                int dRetVal = (int)(_XMaxValue / _XMotorSubdivision);
+                XHomecoefficient = dRetVal - 20;
                 try
                 {
                     if (Workspace.This != null)
                     {
                         if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 11)
                         {
-                            XHomecoefficient = 311;
+                            XHomecoefficient = dRetVal - 19;
                         }
                         else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 12)
                         {
-                            XHomecoefficient = 312;
+                            XHomecoefficient = dRetVal - 18;
                         }
                         else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 13)
                         {
-                            XHomecoefficient = 313;
-                        }
-                        //else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 14)
-                        //{
-                        //    _XHomecoefficient = 314;
-                        //}
-                        //else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 15)
-                        //{
-                        //    _XHomecoefficient = 315;
-                        //}
-                    }
-                }
-                catch
-                {
-                }
-            }
-            else
-            {
-                XHomecoefficient = 550;
-                try
-                {
-                    if (Workspace.This != null)
-                    {
-                        if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 11)
-                        {
-                            XHomecoefficient = 551;
-                        }
-                        else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 12)
-                        {
-                            XHomecoefficient = 552;
-                        }
-                        else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 13)
-                        {
-                            XHomecoefficient = 553;
+                            XHomecoefficient = dRetVal - 17;
                         }
                         //else if (Workspace.This.EthernetController.DeviceProperties.LogicalHomeX == 14)
                         //{
@@ -1736,6 +1738,7 @@ namespace Azure.ScannerEUI.ViewModel
             OnSpentTimeStart();//SpentTime 
             _ScanningProcess.Start();
             Workspace.This.CameraModeViewModel.IsCameraEnabled = false;
+            Workspace.This.Scanner_Camera_IsAlive = false;
             Workspace.This.MotorIsAlive = false;
             Workspace.This.IsScanning = true;
             //Optical module button disabled
@@ -1802,6 +1805,7 @@ namespace Azure.ScannerEUI.ViewModel
                 Workspace.This.IsScanning = false;
                 Workspace.This.IsPreparing = false;
                 //Enable Motor control
+                Workspace.This.Scanner_Camera_IsAlive = true;
                 Workspace.This.MotorIsAlive = true;
                 Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
                 ScanProcessing scannedThread = (sender as ScanProcessing);
@@ -2320,6 +2324,7 @@ namespace Azure.ScannerEUI.ViewModel
                         Workspace.This.SelectedTabIndex = (int)ApplicationTabType.Gallery;   // Switch to gallery tab
                     }
                 }
+                Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
                 Workspace.This.DisconnectDeviceEnable = true;  //Optical module button enable
             });
         }
@@ -2485,6 +2490,7 @@ namespace Azure.ScannerEUI.ViewModel
                 WorkDone();
                 Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
                 //Enable Motor control
+                Workspace.This.Scanner_Camera_IsAlive = true;
                 Workspace.This.MotorIsAlive = true;
                 //光学模块按钮启用  Optical module button enable
                 Workspace.This.DisconnectDeviceEnable = true;
@@ -2498,9 +2504,10 @@ namespace Azure.ScannerEUI.ViewModel
                 { //终止当前扫描
                   //Terminate the current scan
                     WorkDone();
-                    Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
                     //Enable Motor control
+                    Workspace.This.Scanner_Camera_IsAlive = true;
                     Workspace.This.MotorIsAlive = true;
+                    Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
                     Workspace.This.DisconnectDeviceEnable = true; //光学模块按钮启用  Optical module button enable
                 }
             }

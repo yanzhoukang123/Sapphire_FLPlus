@@ -1,6 +1,7 @@
 ﻿using Azure.CameraLib;
 using Azure.CommandLib;
 using Azure.EthernetCommLib;
+using Azure.Image.Processing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +37,7 @@ namespace Azure.ImagingSystem
         private AutoResetEvent _LiveAutoResetEvent = new AutoResetEvent(false);
         private int Width;
         private int Height;
+        ushort[] pixelData = null;
         public ImagingLiveCommand(CameraController camera,
                                   EthernetController ethernet,
                                   CameraParameterStruct cameraParameter)
@@ -43,9 +45,12 @@ namespace Azure.ImagingSystem
             _CommController = ethernet;
             _ActiveCamera = camera;
             _CameraParameter = cameraParameter;
+            _ActiveCamera.LiveImageReceived += _ActiveCamera_LiveImageReceived;
         }
         public override void Finish()
         {
+
+            _CommController.SetRGBLightRegisterControl(0);//关闭R/G/B灯光
             _StatusText = string.Empty;
             if (CommandStatus != null)
             {
@@ -54,7 +59,9 @@ namespace Azure.ImagingSystem
 
             if (_ActiveCamera != null)
             {
-                _ActiveCamera.ChangeTriggerMode(0);
+                //_ActiveCamera.ChangeTriggerMode(0);
+                _ActiveCamera.LiveCapture = false;
+                _ActiveCamera.LiveImageReceived -= _ActiveCamera_LiveImageReceived;
             }
             _DisplayBitmap = null;
         }
@@ -75,8 +82,20 @@ namespace Azure.ImagingSystem
                 }
                 finally
                 {
-                    _DisplayBitmap = temp;
                     temp.Unlock();
+                    PixelFormat format = PixelFormats.Gray16;
+                    int stride = (temp.PixelWidth * temp.Format.BitsPerPixel + 7) / 8;
+                    pixelData = new ushort[temp.PixelHeight * stride];
+                    temp.CopyPixels(pixelData, stride, 0);
+                    //14bit to 16bit
+                    fixed (ushort* ptr = pixelData)
+                    {
+                        for (int i = 0; i < pixelData.Length; i++)
+                        {
+                            *(ptr + i) = (ushort)((*(ptr + i)) << 2);
+                        }
+                    }
+                    _DisplayBitmap = BitmapSource.Create(temp.PixelWidth, temp.PixelHeight, 96, 96, format, null, pixelData, stride);
                     //if (LiveImageReceived != null)
                     //{
                     //    if (_DisplayBitmap != null)
@@ -148,11 +167,17 @@ namespace Azure.ImagingSystem
             }
             try
             {
-                _ActiveCamera.cam_.Stop();//为了重新定义DelegateOnEventCallback代理方法
-                _ActiveCamera.cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback));
+                //_ActiveCamera.cam_.Stop();//为了重新定义DelegateOnEventCallback代理方法，需要先执行Stop()
+                //_ActiveCamera.cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback));
+                //if (_ActiveCamera.SetExpoTime(ExposureTime))
+                //{
+                //    _ActiveCamera.ChangeCaptureMode(0xffff); //循环模式
+                //}
+
                 if (_ActiveCamera.SetExpoTime(ExposureTime))
                 {
-                    _ActiveCamera.ChangeTriggerMode(0xffff); //循环模式
+                    _ActiveCamera.ChangeCaptureMode(0); //视频模式
+                    _ActiveCamera.LiveCapture = true;
                 }
                 _LiveAutoResetEvent.WaitOne();
             }
@@ -183,10 +208,44 @@ namespace Azure.ImagingSystem
             }
             finally
             {
+                _ActiveCamera.LiveCapture = false;
+                _CommController.SetRGBLightRegisterControl(0);
                 _LiveAutoResetEvent.Set();
+                _ActiveCamera.LiveImageReceived -= _ActiveCamera_LiveImageReceived;
             }
 
         }
+
+        private void _ActiveCamera_LiveImageReceived(WriteableBitmap dis)
+        {
+            //WriteableBitmap temp;
+            //ImageProcessing.FrameToBitmap(out temp, pixelData, _ActiveCamera.Width, _ActiveCamera.Height);
+            //if (LiveImageReceived != null)
+            //{
+            //    if (_DisplayBitmap != null)
+            //    {
+            //        // Rotate the image 180 degree
+            //        TransformedBitmap tb = new TransformedBitmap();
+            //        tb.BeginInit();
+            //        tb.Source = _DisplayBitmap;
+            //        System.Windows.Media.RotateTransform transform = new System.Windows.Media.RotateTransform(180);
+            //        tb.Transform = transform;
+            //        tb.EndInit();
+            //        _DisplayBitmap = new WriteableBitmap((BitmapSource)tb);
+            //    }
+            //}
+           // _DisplayBitmap = ImageProcessing.ConvertCameraWriteableBitmapToBitmapImage(dis);
+            //_DisplayBitmap = dis;
+            //if (_DisplayBitmap != null)
+            //{
+            //    if (_DisplayBitmap.CanFreeze)
+            //    {
+            //        _DisplayBitmap.Freeze();
+            //    }
+                LiveImageReceived?.Invoke(dis);
+           // }
+        }
+
         public class CameraParameterStruct
         {
             public uint ExposureTime;  //um
@@ -197,7 +256,9 @@ namespace Azure.ImagingSystem
         }
         public override void AbortWork()
         {
-            _ActiveCamera.ChangeTriggerMode(0);
+            _ActiveCamera.LiveCapture = false;
+            _ActiveCamera.LiveImageReceived -= _ActiveCamera_LiveImageReceived;
+            //_ActiveCamera.ChangeTriggerMode(0);
         }
     }
 }

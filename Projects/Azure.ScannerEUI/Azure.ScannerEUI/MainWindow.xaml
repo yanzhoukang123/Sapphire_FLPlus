@@ -98,7 +98,7 @@
                             <local:ScannerModePanel x:Name="_ScannerModePanel"
                                 VerticalAlignment="Top"
                                 Visibility="{Binding Path=IsImagingMode, Converter={StaticResource boolToVisibilityConverter}}"
-                                IsEnabled="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.MotorIsAlive}"/>
+                                IsEnabled="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.Scanner_Camera_IsAlive}"/>
                             <Grid Visibility="{Binding IsScanner_Mode}">
                             <local:ScanWorkUserControl x:Name="_ScannerWorkPanel"
                                 Margin="0,30,0,0"
@@ -166,7 +166,7 @@
                         </StackPanel>
                         <StackPanel Orientation="Vertical">
                             <local:UsScanContorlSpentTimeAndRemaining Visibility="{Binding IsScanner_Mode}" IsEnabled="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.ScanIsAlive}"/>
-                            <local:DisconnectDevice HorizontalAlignment="Right"></local:DisconnectDevice >
+                            <local:DisconnectDevice HorizontalAlignment="Right" IsEnabled="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.Scanner_Camera_IsAlive}"></local:DisconnectDevice >
                         </StackPanel>
                     </StackPanel>
                 </Grid>

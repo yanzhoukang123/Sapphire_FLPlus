@@ -33,12 +33,12 @@ namespace Azure.ScannerEUI.ViewModel
         private int _Pixel_10_R1_DY;
         private int _Pixel_10_R2_DX;
         private int _Pixel_10_R2_DY;
-        private float _FocusLength=0;
+        private float _FocusLength = 0;
         private float _XEncoderSubdivision;
         private float _FanSwitchInterval;
         private float _FanReserveTemperature;
         private string _SystemSN;
-        private byte _VersionExtension; 
+        private byte _VersionExtension;
         private float _LCoefficient;
         private float _L375Coefficient;
         private float _R1Coefficient;
@@ -168,8 +168,8 @@ namespace Azure.ScannerEUI.ViewModel
         private double _R2TECControlKd = 0;
 
         private string _LPMTCoefficient = "0";
-        private string _R1PMTCoefficient= "0";
-        private string _R2PMTCoefficient= "0";
+        private string _R1PMTCoefficient = "0";
+        private string _R2PMTCoefficient = "0";
 
         private bool _IsEnabledL1 = false;
         private bool _IsEnabledR1 = false;
@@ -234,7 +234,7 @@ namespace Azure.ScannerEUI.ViewModel
             //When the configuration parameters are incorrect, it means that the current device is new and given default parameters
             if (Workspace.This.EthernetController.DeviceProperties.OpticalLR1Distance != 24 && Workspace.This.EthernetController.DeviceProperties.PixelOffsetR1 != 2400 &&
               Workspace.This.EthernetController.DeviceProperties.OpticalLR2Distance != 48 && Workspace.This.EthernetController.DeviceProperties.PixelOffsetR2 != 4800 &&
-              Workspace.This.EthernetController.DeviceProperties.ZFocusPosition != 1 &&Workspace.This.EthernetController.DeviceProperties.FanReserveTemperature != 1400 && 
+              Workspace.This.EthernetController.DeviceProperties.ZFocusPosition != 1 && Workspace.This.EthernetController.DeviceProperties.FanReserveTemperature != 1400 &&
               Workspace.This.EthernetController.DeviceProperties.FanSwitchInterval != 400)
             {
                 float Init_LCoefficient = 0.15F;
@@ -261,28 +261,28 @@ namespace Azure.ScannerEUI.ViewModel
                 float Init_CH1WarningTemperature = 30;
                 MessageBoxResult boxResult = MessageBoxResult.None;
                 boxResult = MessageBox.Show("Currently, no personalization parameters are detected. Do you want to write the default value！\n"
-                    + "\n L Coefficient = "+ Init_LCoefficient
-                    + "\n 375 - L Coefficient = "+ Init_L375Coefficient
-                    + "\n R1 Coefficient = "+ Init_R1Coefficient
-                    + "\n R2 Coefficient = "+ Init_R2Coefficient
-                    + "\n 532 - R2 Coefficient = "+ Init_R2532Coefficient
-                    + "\n R2 X logical Home(mm) = "+ Init_R1XLogicalHome
-                    + "\n R2 Y logical Home(mm) = "+ Init_R1YLogicalHome
-                    + "\n R1-R2 Distance(mm) = "+ Init_OpticalR2_R1Distance
-                    + "\n R1-R2 10 Pixel Distance = "+ Init_Pixel_10_Offset_R2_R1
-                    + "\n L-R2 Distance(mm) = "+ Init_OpticalL_R1Distance
-                    + "\n L-R2 10 Pixel Distance = "+ Init_Pixel_10_Offset_L_R1
-                    + "\n Pixel 10 L  DX(pixel) = "+ Init_Pixel_10_L_DX
-                    + "\n Pixel 10 L  DY(pixel) = "+ Init_Pixel_10_L_DY
-                    + "\n Pixel 10 R1 DX(pixel) = "+ Init_Pixel_10_R2_DX
-                    + "\n Pixel 10 R1 DY(pixel) = "+ Init_Pixel_10_R2_DY
-                    + "\n FocusLength(mm) = "+ Init_FocusLength
-                    + "\n XEncoderSubdivision = "+ Init_XEncoderSubdivision
-                    + "\n Modules Fan Hysteresis(℃) = "+ Init_FanSwitchInterval
-                    + "\n Modules Fan Operation(℃) = "+ Init_FanReserveTemperature
-                    + "\n SystemSN = "+ Init_SystemSN
-                    + "\n Default Level = "+ Init_ShellFanDefaultSpeed
-                    + "\n Warning Temperature(℃) = "+ Init_CH1WarningTemperature
+                    + "\n L Coefficient = " + Init_LCoefficient
+                    + "\n 375 - L Coefficient = " + Init_L375Coefficient
+                    + "\n R1 Coefficient = " + Init_R1Coefficient
+                    + "\n R2 Coefficient = " + Init_R2Coefficient
+                    + "\n 532 - R2 Coefficient = " + Init_R2532Coefficient
+                    + "\n R2 X logical Home(mm) = " + Init_R1XLogicalHome
+                    + "\n R2 Y logical Home(mm) = " + Init_R1YLogicalHome
+                    + "\n R1-R2 Distance(mm) = " + Init_OpticalR2_R1Distance
+                    + "\n R1-R2 10 Pixel Distance = " + Init_Pixel_10_Offset_R2_R1
+                    + "\n L-R2 Distance(mm) = " + Init_OpticalL_R1Distance
+                    + "\n L-R2 10 Pixel Distance = " + Init_Pixel_10_Offset_L_R1
+                    + "\n Pixel 10 L  DX(pixel) = " + Init_Pixel_10_L_DX
+                    + "\n Pixel 10 L  DY(pixel) = " + Init_Pixel_10_L_DY
+                    + "\n Pixel 10 R1 DX(pixel) = " + Init_Pixel_10_R2_DX
+                    + "\n Pixel 10 R1 DY(pixel) = " + Init_Pixel_10_R2_DY
+                    + "\n FocusLength(mm) = " + Init_FocusLength
+                    + "\n XEncoderSubdivision = " + Init_XEncoderSubdivision
+                    + "\n Modules Fan Hysteresis(℃) = " + Init_FanSwitchInterval
+                    + "\n Modules Fan Operation(℃) = " + Init_FanReserveTemperature
+                    + "\n SystemSN = " + Init_SystemSN
+                    + "\n Default Level = " + Init_ShellFanDefaultSpeed
+                    + "\n Warning Temperature(℃) = " + Init_CH1WarningTemperature
                    , "warning", MessageBoxButton.YesNo);
                 if (boxResult == MessageBoxResult.Yes)
                 {
@@ -366,7 +366,7 @@ namespace Azure.ScannerEUI.ViewModel
                 if (_R1YLogicalHome != value)
                 {
                     //_R1YLogicalHome = (int)(value * _YMotorSubdivision);
-                    _R1YLogicalHome=(int)value;
+                    _R1YLogicalHome = (int)value;
                     RaisePropertyChanged("R1YLogicalHome");
                 }
             }
@@ -386,7 +386,7 @@ namespace Azure.ScannerEUI.ViewModel
                 if (_OpticalR2_R1Distance != value)
                 {
                     //_OpticalR2_R1Distance = (int)(value * _XMotorSubdivision);
-                    _OpticalR2_R1Distance=(int)value;
+                    _OpticalR2_R1Distance = (int)value;
                     RaisePropertyChanged("OpticalR2_R1Distance");
                 }
             }
@@ -418,7 +418,7 @@ namespace Azure.ScannerEUI.ViewModel
                 if (_OpticalL_R1Distance != value)
                 {
                     //    _OpticalL_R1Distance = (int)(value * _XMotorSubdivision);
-                    _OpticalL_R1Distance=(int)value;
+                    _OpticalL_R1Distance = (int)value;
                     RaisePropertyChanged("OpticalL_R1Distance");
                 }
             }
@@ -4173,7 +4173,7 @@ namespace Azure.ScannerEUI.ViewModel
                 }
                 if (IsR1TECControlKd)
                 {
-                   //IsSelectAnyCheckBox = true;
+                    //IsSelectAnyCheckBox = true;
                     if (Workspace.This.EthernetController.SetTECControlKd(LaserChannels.ChannelA, R1TECControlKd) == false)
                     {
                         MessageBox.Show("R1TECControlKd Write Failed.");
@@ -4440,7 +4440,7 @@ namespace Azure.ScannerEUI.ViewModel
                 deviceProperties.ShellFanDefaultSpeed = ShellFanDefaultSpeed;
                 deviceProperties.CH1AlertWarningSwitch = CH1AlertWarningSwitch;
                 deviceProperties.CH1WarningTemperature = CH1WarningTemperature;
-                deviceProperties.VersionExtension = Convert.ToByte(VersionExtension); 
+                deviceProperties.VersionExtension = Convert.ToByte(VersionExtension);
                 if (Workspace.This.EthernetController.SetDeviceProperties(deviceProperties) == false)
                 {
                     MessageBox.Show("Write Failed.");
@@ -4533,7 +4533,7 @@ namespace Azure.ScannerEUI.ViewModel
 
                 if (Workspace.This.IVVM.WR2 != 532)
                 {
-                   Is532EnabledR2 = Visibility.Hidden;
+                    Is532EnabledR2 = Visibility.Hidden;
                 }
                 if (Workspace.This.IVVM.SensorMR2 != IvSensorType.PMT)
                 {
@@ -4572,7 +4572,7 @@ namespace Azure.ScannerEUI.ViewModel
             Pixel_10_R2_DY = Workspace.This.EthernetController.DeviceProperties.PixelOffsetDyCHR2;
             FocusLength = Workspace.This.EthernetController.DeviceProperties.ZFocusPosition;
             SystemSN = Encoding.ASCII.GetString(Workspace.This.EthernetController.DeviceProperties.SysSN).TrimEnd('\0');
-            VersionExtension= Workspace.This.EthernetController.DeviceProperties.VersionExtension;
+            VersionExtension = Workspace.This.EthernetController.DeviceProperties.VersionExtension;
             Pixel_10_L_DX = Workspace.This.EthernetController.DeviceProperties.PixelOffsetDxCHL;
             Pixel_10_L_DY = Workspace.This.EthernetController.DeviceProperties.PixelOffsetDyCHL;
             XEncoderSubdivision = Workspace.This.EthernetController.DeviceProperties.XEncoderSubdivision;
@@ -4669,6 +4669,62 @@ namespace Azure.ScannerEUI.ViewModel
             IsLWavelength = false;
             IsR1Wavelength = false;
             IsR2Wavelength = false;
+        }
+
+        public void WriteOtherSettings()
+        {
+            AvocadoDeviceProperties deviceProperties;
+            var ptr = Marshal.AllocHGlobal(256);
+            deviceProperties = (AvocadoDeviceProperties)Marshal.PtrToStructure(ptr, typeof(AvocadoDeviceProperties));
+            Marshal.FreeHGlobal(ptr);
+            deviceProperties.LogicalHomeX = (float)R1XLogicalHome;
+            deviceProperties.LogicalHomeY = (float)R1YLogicalHome;
+            deviceProperties.OpticalLR1Distance = (float)OpticalR2_R1Distance;
+            deviceProperties.PixelOffsetR1 = Pixel_10_Offset_R2_R1;
+            deviceProperties.OpticalLR2Distance = (float)OpticalL_R1Distance;
+            deviceProperties.PixelOffsetR2 = Pixel_10_Offset_L_R1;
+            deviceProperties.PixelOffsetDxCHR1 = Pixel_10_R1_DX;
+            deviceProperties.PixelOffsetDyCHR1 = Pixel_10_R1_DY;
+            deviceProperties.PixelOffsetDxCHR2 = Pixel_10_R2_DX;
+            deviceProperties.PixelOffsetDyCHR2 = Pixel_10_R2_DY;
+            deviceProperties.ZFocusPosition = FocusLength;
+            if (SystemSN != null)
+            {
+                byte[] sysSN = System.Text.Encoding.Default.GetBytes(SystemSN);
+                for (int i = 0; i < deviceProperties.SysSN.Length; i++)
+                {
+                    if (i < sysSN.Length)
+                    {
+                        deviceProperties.SysSN[i] = sysSN[i];
+                    }
+                    else
+                    {
+                        deviceProperties.SysSN[i] = 0;
+                    }
+                }
+            }
+            deviceProperties.PixelOffsetDxCHL = Pixel_10_L_DX;
+            deviceProperties.PixelOffsetDyCHL = Pixel_10_L_DY;
+            deviceProperties.XEncoderSubdivision = XEncoderSubdivision;
+            deviceProperties.FanSwitchInterval = ((int)FanSwitchInterval * 100) * 2;
+            deviceProperties.FanReserveTemperature = ((int)FanReserveTemperature * 100) - ((int)FanSwitchInterval * 100);
+            deviceProperties.LCoefficient = LCoefficient;
+            deviceProperties.L375Coefficient = L375Coefficient;
+            deviceProperties.R1Coefficient = R1Coefficient;
+            deviceProperties.R2Coefficient = R2Coefficient;
+            deviceProperties.R2532Coefficient = R2532Coefficient;
+            deviceProperties.ShellFanDefaultSpeed = ShellFanDefaultSpeed;
+            deviceProperties.CH1AlertWarningSwitch = CH1AlertWarningSwitch;
+            deviceProperties.CH1WarningTemperature = CH1WarningTemperature;
+            deviceProperties.VersionExtension = Convert.ToByte(VersionExtension);
+            if (Workspace.This.EthernetController.SetDeviceProperties(deviceProperties) == false)
+            {
+                MessageBox.Show("Write Failed.");
+            }
+            else
+            {
+                //Workspace.This.MotorVM.LimitsXPlus = Workspace.This.MotorVM.XMaxValue - Workspace.This.EthernetController.DeviceProperties.OpticalLR2Distance;
+            }
         }
 
     }

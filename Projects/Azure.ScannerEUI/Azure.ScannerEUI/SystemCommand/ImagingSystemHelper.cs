@@ -376,7 +376,7 @@ namespace Azure.ScannerEUI.SystemCommand
             double exposureTime = 0.05;          // Initial exposure  ms
             double initialExposureTime = exposureTime;
             double maxPixelValue = 0;
-            double upperCeiling = 13749;    // Default upper ceiling   55000/65535*16383=13749
+            double upperCeiling = 55000;    // Default upper ceiling  
             double chemiMaximumExposure = imageChannelSettings.MaxExposure;
             ImageArithmetic imgArith = new ImageArithmetic();
             double signalTooHighTestExposure = exposureTime / 10.0;
@@ -458,7 +458,7 @@ namespace Azure.ScannerEUI.SystemCommand
                             break;
                         }
                     }
-                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 50) // 200/65535*16383=49.9977111467155,
+                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 200) 
                     {
                         exposureTime = Math.Round(((upperCeiling - Biasmean) / (maxPixelValue)) * exposureTime, 3);
                         //exposureTime = (upperCeiling / maxPixelValue) * exposureTime;
@@ -468,7 +468,7 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
                         break;
                     }
-                    else if (maxPixelValue <= 50)
+                    else if (maxPixelValue <= 200)
                     {
                         if (exposureTime == initialExposureTime)
                         {
@@ -501,7 +501,7 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
                         wbCapturedBitmap = ImageProcessing.MedianFilter(wbCapturedBitmap);
                         maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap);
-                        if (maxPixelValue > 50)
+                        if (maxPixelValue > 200)
                         {
                             int binningMode = imageChannelSettings.BinningMode;
                             exposureTime = Math.Round(((upperCeiling - Biasmean) / (maxPixelValue)) * exposureTime, 3);
@@ -511,7 +511,7 @@ namespace Azure.ScannerEUI.SystemCommand
                             }
                             break;
                         }
-                        else if (maxPixelValue <= 50)
+                        else if (maxPixelValue <= 200)
                         {
                             throw new Exception("AE ERROR: Signal too weak!");
                         }
@@ -545,7 +545,7 @@ namespace Azure.ScannerEUI.SystemCommand
             double exposureTime = 1.0;          // Initial exposure  ms
             double initialExposureTime = exposureTime;
             double maxPixelValue = 0;
-            double upperCeiling = 13749;    // Default upper ceiling   55000/65535*16383=13749
+            double upperCeiling = 55000;    
             double chemiMaximumExposure = imageChannelSettings.MaxExposure;
             ImageArithmetic imgArith = new ImageArithmetic();
             double signalTooHighTestExposure = exposureTime / 10.0;
@@ -628,7 +628,7 @@ namespace Azure.ScannerEUI.SystemCommand
                             break;
                         }
                     }
-                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 50) // 200/65535*16383=49.9977111467155,
+                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 200) 
                     {
                         exposureTime = Math.Round(((upperCeiling - Biasmean) / (maxPixelValue)) * exposureTime, 3);
                         //exposureTime = (upperCeiling / maxPixelValue) * exposureTime;
@@ -648,7 +648,7 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
                         break;
                     }
-                    else if (maxPixelValue <= 50)
+                    else if (maxPixelValue <= 200)
                     {
                         if (exposureTime == initialExposureTime)
                         {
@@ -681,7 +681,7 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
                         wbCapturedBitmap = ImageProcessing.MedianFilter(wbCapturedBitmap);
                         maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap);
-                        if (maxPixelValue > 50)
+                        if (maxPixelValue > 200)
                         {
                             int binningMode = imageChannelSettings.BinningMode;
                             exposureTime = Math.Round(((upperCeiling - Biasmean) / (maxPixelValue)) * exposureTime, 3);
@@ -701,7 +701,7 @@ namespace Azure.ScannerEUI.SystemCommand
                             }
                             break;
                         }
-                        else if (maxPixelValue <= 50)
+                        else if (maxPixelValue <= 200)
                         {
                             throw new Exception("AE ERROR: Signal too weak!");
                         }

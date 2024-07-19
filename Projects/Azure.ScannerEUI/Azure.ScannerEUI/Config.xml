@@ -45,10 +45,10 @@
   </ScanSpeeds>
 
   <MotorParameters>
-    <!-- Plus 45833 570mm -->
+    <!--Plus设备中X轴最大行程 79167=570mm ,-->
+    <!--Maximum X-axis travel in Plus devices 79167=570mm -->
     <MotorParameter Name="Plus_XMaxValue" Value="79167"/>
-    <!--45833 330mm-->
-    <MotorParameter Name="XMaxValue" Value="79167"/>
+    <MotorParameter Name="XMaxValue" Value="45833"/>
     <MotorParameter Name="YMaxValue" Value="432000"/>
     <MotorParameter Name="ZMaxValue" Value="8819"/>
     <MotorParameter Name="WMaxValue" Value="28000"/>
@@ -319,7 +319,8 @@
     <!--<ShellFanModule ShellFan="ModuleHighTemperature" Value="7"/>-->
   </ShellFanModules>
 
-
+  <!--相机的Bin选择项 -->
+  <!--Bin selector for the camera -->
   <BinFactors>
     <BinFactor Position="1" VerticalBins="1" HorizontalBins="1" DisplayName="1x1" />
     <BinFactor Position="2" VerticalBins="2" HorizontalBins="2" DisplayName="2x2" />
@@ -327,7 +328,8 @@
     <BinFactor Position="4" VerticalBins="4" HorizontalBins="4" DisplayName="4x4" />
   </BinFactors>
 
-
+  <!--相机的Gain选择项 -->
+  <!--Gain selector for the camera -->
   <Gains>
     <Gain Position="1" Value="100" DisplayName="100" />
     <Gain Position="2" Value="200" DisplayName="200" />
@@ -336,46 +338,69 @@
     <Gain Position="5" Value="500" DisplayName="500" />
   </Gains>
 
+  <!--灯板R,G,B通道 -->
+  <!--Lamp board R,G,B channel -->
   <RgbIntensities>
     <RgbIntensity Position="1" Intensity="65535" DisplayName="Red" />
     <RgbIntensity Position="2" Intensity="65535" DisplayName="Green" />
     <RgbIntensity Position="3" Intensity="65535" DisplayName="Blue" />
   </RgbIntensities>
 
+  <!--相机模式下X,Y电机移动的指定位置 -->
+  <!--Position of X,Y motor movement in camera mode  -->
   <CameraSetting>
-    <AbsXPos>570</AbsXPos>
+    <AbsXPos>560</AbsXPos>
     <AbsYPos>270</AbsYPos>
   </CameraSetting>
 
+  <!--成像模式下的参数 -->
+  <!--Parameters in imaging mode  -->
   <ChemiSOLOSettings>
+    <!--Cumulative/Multiple 最大张数 -->
     <NumFrames>10</NumFrames>
+    <!--拍摄DarkMaster图像使用的增益数 -->
     <Gain>300</Gain>
+    <!--拍摄RGB图像使用的增益数 -->
     <RGBImageGain>1</RGBImageGain>
+    <!--拍摄Chemi图像使用的增益数 -->
     <ChemiImageGain>100</ChemiImageGain>
-    <FlatsAutoExposureOptimal>13749</FlatsAutoExposureOptimal>
-    <RapidCapture>16250</RapidCapture>
-    <DynamicRange>12500</DynamicRange>
-    <OverExposeure>12500</OverExposeure>
+    <!--计算自动曝光时间的上限值 -->
+    <FlatsAutoExposureOptimal>55000</FlatsAutoExposureOptimal>
+    <RapidCapture>35000</RapidCapture>
+    <DynamicRange>50000</DynamicRange>
+    <OverExposeure>50000</OverExposeure>
     <IsDynamicDarkCorrection>False</IsDynamicDarkCorrection>
     <MaxExposure>1800</MaxExposure>
+    <!--拍摄RGB光源图像时，自动曝光算法中所用到的初始曝光时间-->
     <InitialExposureTime>0.05</InitialExposureTime>
+    <!--拍摄Chemi图像时，自动曝光算法中所用到的初始曝光时间-->
     <ChemiInitialExposureTime>10</ChemiInitialExposureTime>
-    <Chemi_NewAlgo_Enable>1</Chemi_NewAlgo_Enable>
+    <!--拍摄Chemi图像时，使用新曝光时间算法？-->
+    <Chemi_NewAlgo_Enable>True</Chemi_NewAlgo_Enable>
     <Chemi_T1>1</Chemi_T1>
     <Chemi_binning_Kxk>10,3,1</Chemi_binning_Kxk>
-    <Chemi_Intensity>75</Chemi_Intensity>
+    <Chemi_Intensity>300</Chemi_Intensity>
+    <!--是否使用Dark_Glow算法？-->
     <Dark_GlowCorrection>True</Dark_GlowCorrection>
+    <!--是否使用Line算法？-->
     <LineCorrection>True</LineCorrection>
+    <!--是否使用Despeckler算法？-->
     <DespecklerCorrection>True</DespecklerCorrection>
+    <!--是否使用Flatfield算法？-->
     <FlatfieldCorrection>True</FlatfieldCorrection>
+    <!--是否使用LensDistortion算法？-->
     <LensDistortionCorrection>True</LensDistortionCorrection>
     <ParamA>0.0</ParamA>
     <ParamB>0.020</ParamB>
     <ParamC>0.0</ParamC>
+    <!--查找Blot图像类型时默认的曝光时间-->
     <BlotFindExposureTime>10</BlotFindExposureTime>
+    <!--背景大于下面的阈值代表图像是GEL类型，否则是Blot类型-->
     <SampleType_threshold>80</SampleType_threshold>
-    <BlotPvCamScalingThreshold>12500</BlotPvCamScalingThreshold>
-    <GelPvCamScalingThreshold>10000</GelPvCamScalingThreshold>
+    <!--白平衡算法中前景图像用到的阈值-->
+    <BlotPvCamScalingThreshold>55000</BlotPvCamScalingThreshold>
+    <!--白平衡算法中背景图像用到的阈值-->
+    <GelPvCamScalingThreshold>40000</GelPvCamScalingThreshold>
   </ChemiSOLOSettings>
 
 </Config>

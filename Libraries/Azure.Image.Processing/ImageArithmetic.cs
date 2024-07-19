@@ -507,16 +507,16 @@ namespace Azure.Image.Processing
                     {
                         float temp = *(ptr + (i * (imgWidth)) + j);
                         ushort result = (ushort)(temp * oprValue);
-                        if (result > 16384)
+                        if (result > 65535)
                         {
-                            result = 16384;
+                            result = 65535;
                         }
                         *(imgData + (i * (imgWidth)) + j) = result;
                     }
 
                 }
-                if (!srcImage.IsFrozen)
-                    srcImage.Unlock();
+                if (!cpyImage.IsFrozen)
+                    cpyImage.Unlock();
             }
             return cpyImage;
         }
