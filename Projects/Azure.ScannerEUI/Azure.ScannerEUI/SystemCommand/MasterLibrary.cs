@@ -435,7 +435,7 @@ namespace Azure.ScannerEUI.SystemCommand
             }
             MasterFile biasMaster = null;
             biasMaster = biasMasters[0];
-            Mat biasImage = Cv2.ImRead(biasMaster.FileInfo.FullName);
+            Mat biasImage = Cv2.ImRead(biasMaster.FileInfo.FullName, ImreadModes.Unchanged);
             return biasImage;
         }
         public WriteableBitmap GetDarkMasterImage(int binningFactor)
@@ -493,7 +493,7 @@ namespace Azure.ScannerEUI.SystemCommand
             }
             MasterFile darkMaster = null;
             darkMaster = darkMasters[0];
-            Mat darkImage = Cv2.ImRead(darkMaster.FileInfo.FullName);
+            Mat darkImage = Cv2.ImRead(darkMaster.FileInfo.FullName,ImreadModes.Unchanged);
             return darkImage;
         }
         #endregion
@@ -1078,10 +1078,10 @@ namespace Azure.ScannerEUI.SystemCommand
             return result;
         }
 
-        public WriteableBitmap ChemiSOLO_CalculateCorrectedImage(WriteableBitmap srcImage,
-                                       double exposureTime,
-                                       int binningFactor,
-                                       out string correctionString)
+        public WriteableBitmap ChemiSOLO_CalculateCorrectedImage_SubtractBias(WriteableBitmap srcImage,
+                                      double exposureTime,
+                                      int binningFactor,
+                                      out string correctionString)
         {
             if (srcImage == null)
             {
@@ -1131,6 +1131,160 @@ namespace Azure.ScannerEUI.SystemCommand
                 correctionString = "";
                 return srcImage;
             }
+
+        }
+        public WriteableBitmap ChemiSOLO_CalculateCorrectedImage(WriteableBitmap srcImage,
+                                       double exposureTime,
+                                       int binningFactor,
+                                       out string correctionString)
+        {
+            if (srcImage == null)
+            {
+                correctionString = "";
+                return srcImage;
+            }
+
+            int iSrcWidth = srcImage.PixelWidth;
+            int iSrcHeight = srcImage.PixelHeight;
+            WriteableBitmap result = null;
+            WriteableBitmap srcBiasCorrectedImage = null;
+            ushort iSrcMinValue = 0;
+            correctionString = "";
+
+            string binMode = binningFactor.ToString() + "x" + binningFactor.ToString();
+            //int iBitsPerPixel = srcImage.Format.BitsPerPixel;
+            //int iSrcStep = (iSrcWidth * iBitsPerPixel + 7) / 8;
+            ImageArithmetic imageArith = new ImageArithmetic();
+            ImageStatistics imageStat = new ImageStatistics();
+            WriteableBitmap darkScaledImage = null;
+
+            if (!DoesLibraryContainBias(binningFactor))
+            {
+                correctionString = "";
+                return srcImage;
+            }
+
+            // source image - bias image
+            WriteableBitmap biasImage = GetBiasImage(binningFactor);
+            if (biasImage != null)
+            {
+                if (biasImage.PixelWidth == srcImage.PixelWidth && biasImage.PixelHeight == srcImage.PixelHeight)
+                {
+                    srcBiasCorrectedImage = imageArith.SubtractImage(srcImage, biasImage);
+                    correctionString = "Bias";
+                    biasImage = null;
+                }
+                else
+                {
+                    correctionString = "";
+                    return srcImage;
+                }
+            }
+            else
+            {
+                correctionString = "";
+                return srcImage;
+            }
+            //
+            // don't do dark correction if the exposure time is less than 1 second
+            //
+            if (exposureTime < 1 || !DoesLibraryContainDark(binningFactor))
+            {
+                correctionString = "Bias";
+                return srcBiasCorrectedImage;
+            }
+            List<MasterFile> darkMastersAll = _DarkDictionary[binMode];
+            List<MasterFile> darkMasters = new List<MasterFile>();
+
+            foreach (var masterFile in darkMastersAll)
+            {
+                darkMasters.Add(masterFile);
+            }
+            //
+            // Sort dark masters for this binning mode by exposure time:
+            //
+            darkMasters.Sort(delegate (MasterFile p1, MasterFile p2) { return p1.ExposureTime.CompareTo(p2.ExposureTime); });
+            //
+            // Find the master files that bound the current exposure time:
+            //
+            if (exposureTime <= darkMasters[0].ExposureTime)
+            {
+                MasterFile darkLow = darkMasters[0];
+                WriteableBitmap darkLowImage = ImageProcessing.LoadImageFile(darkLow.FileInfo.FullName);
+                if (darkLowImage != null)
+                {
+                    // dark scaled
+                    double lowScale = exposureTime / darkLow.ExposureTime;
+                    darkScaledImage = imageArith.Multiply(darkLowImage, lowScale);
+                    darkLowImage = null;
+                }
+            }
+            else if (exposureTime >= darkMasters[darkMasters.Count - 1].ExposureTime)
+            {
+                MasterFile darkHigh = darkMasters[darkMasters.Count - 1];
+                WriteableBitmap darkHighImage = ImageProcessing.LoadImageFile(darkHigh.FileInfo.FullName);
+                if (darkHighImage != null)
+                {
+                    // dark scaled
+                    double highScale = exposureTime / darkHigh.ExposureTime;
+                    darkScaledImage = imageArith.Multiply(darkHighImage, highScale);
+                    darkHighImage = null;
+                }
+            }
+            else
+            {
+                MasterFile darkLow = null;
+                MasterFile darkHigh = null;
+                MasterFile darkSelected = null;
+
+                foreach (MasterFile master in darkMasters)
+                {
+                    if (exposureTime >= master.ExposureTime)
+                    {
+                        darkLow = master;
+                    }
+                    if (exposureTime <= master.ExposureTime && darkHigh == null)
+                    {
+                        darkHigh = master;
+                        break;
+                    }
+                }
+
+                if ((darkHigh.ExposureTime - exposureTime) < (exposureTime - darkLow.ExposureTime))
+                {
+                    darkSelected = darkHigh;
+                }
+                else
+                {
+                    darkSelected = darkLow;
+                }
+
+                WriteableBitmap darkImage = ImageProcessing.LoadImageFile(darkSelected.FileInfo.FullName);
+                if (darkImage != null)
+                {
+                    // dark scaled
+                    double darkScale = exposureTime / darkSelected.ExposureTime;
+                    darkScaledImage = imageArith.Multiply(darkImage, darkScale);
+                    darkImage = null;
+                }
+            }
+            if (iSrcWidth == darkScaledImage.PixelWidth && iSrcHeight == darkScaledImage.PixelHeight)
+            {
+                //((C-B) - ((D*C_exp)/D_exp)) - min;
+                WriteableBitmap biasDarkCorrectedBitmap = imageArith.SubtractImage(srcBiasCorrectedImage, darkScaledImage);
+                iSrcMinValue = (ushort)imageStat.GetPixelMin(biasDarkCorrectedBitmap, new System.Drawing.Rectangle(0, 0, iSrcWidth, iSrcHeight));
+                result = imageArith.Subtract(biasDarkCorrectedBitmap, (iSrcMinValue - 5));
+                correctionString = "Dark";
+                biasDarkCorrectedBitmap = null;
+            }
+            else
+            {
+                correctionString = "Bias";
+                return srcBiasCorrectedImage;
+            }
+
+            return result;
+
         }
 
         public Mat ChemiSOLO_ApplyDark_GlowFun(Mat DarkMasterImage, Mat srcImage, Mat BiasImage)
@@ -1138,7 +1292,7 @@ namespace Azure.ScannerEUI.SystemCommand
             // 1.使用与样本图像l2相同的箱子加载暗主图像l1 。
             // 设定参数
             Mat l1 = new Mat();
-            Mat l2 = new Mat();
+            Mat l2 = srcImage;
             Cv2.Subtract(DarkMasterImage, BiasImage, l1);
             int interval = 5;
             // 2.在l1的4个角测量300x300像素盒的平均强度。
@@ -1274,15 +1428,21 @@ namespace Azure.ScannerEUI.SystemCommand
             var line = Cv2.FitLine(points, DistanceTypes.L1, 0, 0.01, 0.01);
             double k = line.Vy / line.Vx;//直线斜率
             double b = line.Y1 - k * line.X1;
-
             // 8.执行 l1 * a + b，为样本图像L2生成模拟暗图像l3。
-            Mat l3, l4;
+            Mat l3 = new Mat(m,n, MatType.CV_16UC1);
+
+            Mat l4 = new Mat(m, n, MatType.CV_16UC1);
+
             l1.ConvertTo(l1, 2);
+            //Cv2.ImWrite(@"C:\ProgramData\Azure Biosystems\Azure.ScannerEUI.Plus\Masters\l3.tif", l3);
+            //Cv2.ImWrite(@"C:\ProgramData\Azure Biosystems\Azure.ScannerEUI.Plus\Masters\l4.tif", l4);
             //imwrite("l1l.tif", l1);
             l1.ConvertTo(l1, 5);
             l3 = l1 * k + b;
 
             // 9.执行图像减法l2 - l3，返回同时进行暗校正和辉光校正的结果图像。
+            //Cv2.ImWrite(@"C:\ProgramData\Azure Biosystems\Azure.ScannerEUI.Plus\Masters\l3.tif", l3);
+            //Cv2.ImWrite(@"C:\ProgramData\Azure Biosystems\Azure.ScannerEUI.Plus\Masters\l4.tif", l4);
             l4 = l2 - l3;
             int rows = l4.Rows;
             int cols = l4.Cols;

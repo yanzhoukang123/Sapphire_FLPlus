@@ -205,175 +205,9 @@ namespace Azure.ScannerEUI.SystemCommand
                 flatImage.Unlock();
         }
 
-        public static double CalculateFlatImageAutoExposure(CameraController ActiveCamera, EthernetController CommController, ImageChannelSettings imageChannelSettings)
-        {
-            double exposureTime = 1.0;          // Initial exposure
-            double initialExposureTime = exposureTime;
-            double maxPixelValue = 0;
-            double upperCeiling = 55000;    // Default upper ceiling   55000/65535*16383=13749
-            double chemiMaximumExposure = imageChannelSettings.MaxExposure;
-            ImageArithmetic imgArith = new ImageArithmetic();
-            double signalTooHighTestExposure = exposureTime / 10.0;
-            double signalTooWeakTestExposure = exposureTime * 4.0;
-            ImageStatistics imageStats = new ImageStatistics();
-            double minexposuretime = (double)ActiveCamera.ExposureTime_MIN;
-            if (imageChannelSettings.AutoExposureUpperCeiling > 0 &&
-                imageChannelSettings.AutoExposureUpperCeiling != upperCeiling)
-            {
-                upperCeiling = imageChannelSettings.AutoExposureUpperCeiling;
-            }
-            // Chemi: Light source = None
-            if (imageChannelSettings.LightType == 0)
-            {
-                //if (imageChannelSettings.AutoExposureUpperCeiling > 0)
-                //{
-                //    upperCeiling = imageChannelSettings.AutoExposureUpperCeiling;
-                //}
-            }
-            else
-            {
-                if (imageChannelSettings.LightType == 1 ||
-                    imageChannelSettings.LightType == 2 ||
-                    imageChannelSettings.LightType == 3 ||
-                    imageChannelSettings.LightType == 4)
-                {
-
-                    exposureTime = initialExposureTime;    // Initial exposure for R/G/B light source
-                }
-
-                signalTooHighTestExposure = Math.Round((exposureTime / 10.0), 5);
-                if (signalTooHighTestExposure < minexposuretime) //0.05ms
-                    signalTooHighTestExposure = minexposuretime;
-                signalTooWeakTestExposure = Math.Round((exposureTime * 30), 3);
-            }
-            WriteableBitmap wbCapturedBitmap = null;
-            try
-            {
-                while (true)
-                {
-                    if (ActiveCamera.SetExpoTime((uint)(exposureTime * ActiveCamera.USConvertMS)))
-                    {
-                        ActiveCamera.CapturesImage(ref wbCapturedBitmap);
-                    }
-                    WriteableBitmap biasImage = null;
-                    if (SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection)
-                    {
-                        // PvCam: using dynamic dark correction
-                    }
-                    else
-                    {
-                        biasImage = Workspace.This.MasterLibrary.GetBiasImage(imageChannelSettings.BinningMode);
-
-                        if (biasImage != null)
-                        {
-                            wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
-                        }
-                        else
-                        {
-                            string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
-                            throw new Exception(strMessage);
-                        }
-                    }
-                    int Biasmean = (int)imageStats.GetMean(wbCapturedBitmap);
-                    wbCapturedBitmap = ImageProcessing.MedianFilter(wbCapturedBitmap);
-                    maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap);
-                    if (maxPixelValue > upperCeiling)
-                    {
-                        if (exposureTime != signalTooHighTestExposure)
-                        {
-                            // Workspace.This.LogMessage("  AutoExposure: Signal too high");
-                            exposureTime = signalTooHighTestExposure;
-                            continue;
-                        }
-                        else
-                        {
-                            // Signal too strong, default to 0.05 msec for Photometrics camera.
-                            exposureTime = minexposuretime;
-                            break;
-                        }
-                    }
-                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 200) // 200/65535*16383=49.9977111467155,
-                    {
-                        exposureTime = Math.Round(((upperCeiling - Biasmean) / (maxPixelValue)) * exposureTime, 3);
-                        exposureTime = (upperCeiling / maxPixelValue) * exposureTime;
-                        if (imageChannelSettings.LightType == 0 && exposureTime > chemiMaximumExposure)
-                        {
-                            exposureTime = chemiMaximumExposure;
-                        }
-                        break;
-                    }
-                    else if (maxPixelValue <= 200)
-                    {
-                        if (exposureTime == initialExposureTime)
-                        {
-                            exposureTime = signalTooWeakTestExposure;
-                        }
-                        wbCapturedBitmap = null;
-                        if (ActiveCamera.SetExpoTime((uint)(exposureTime * ActiveCamera.USConvertMS)))
-                        {
-                            ActiveCamera.CapturesImage(ref wbCapturedBitmap);
-                        }
-                        if (SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection)
-                        {
-                            // PvCam: using dynamic dark correction
-                        }
-                        else
-                        {
-                            biasImage = Workspace.This.MasterLibrary.GetBiasImage(imageChannelSettings.BinningMode);
-
-                            if (biasImage != null)
-                            {
-                                wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
-                            }
-                            else
-                            {
-                                string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
-                                throw new Exception(strMessage);
-                            }
-                        }
-                        wbCapturedBitmap = ImageProcessing.MedianFilter(wbCapturedBitmap);
-                        maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap);
-                        if (maxPixelValue > 200)
-                        {
-                            int binningMode = imageChannelSettings.BinningMode;
-                            exposureTime = Math.Round(((upperCeiling - Biasmean) / (maxPixelValue)) * exposureTime, 3);
-                            if (imageChannelSettings.LightType == 0 && exposureTime > chemiMaximumExposure)
-                            {
-                                exposureTime = chemiMaximumExposure;
-                            }
-                            break;
-                        }
-                        else if (maxPixelValue <= 200)
-                        {
-                            throw new Exception("AE ERROR: Signal too weak!");
-                        }
-                    }
-                }
-            }
-            catch (System.Threading.ThreadAbortException)
-            {
-                exposureTime = minexposuretime; //ms
-                throw;
-            }
-            catch (Exception ex)
-            {
-                exposureTime = minexposuretime; //ms
-                System.Diagnostics.Debug.WriteLine(ex.Message);
-                throw;
-            }
-            finally
-            {
-
-            }
-            wbCapturedBitmap = null;
-            return exposureTime;
-
-
-        }
-
         public static double ChemiSOLO_CalculateFlatImageAutoExposure(CameraController ActiveCamera, EthernetController CommController, ImageChannelSettings imageChannelSettings)
         {
-            double exposureTime = 0.05;          // Initial exposure  ms
+            double exposureTime = 1;          // Initial exposure  1s
             double initialExposureTime = exposureTime;
             double maxPixelValue = 0;
             double upperCeiling = 55000;    // Default upper ceiling  
@@ -382,7 +216,7 @@ namespace Azure.ScannerEUI.SystemCommand
             double signalTooHighTestExposure = exposureTime / 10.0;
             double signalTooWeakTestExposure = exposureTime * 4.0;
             ImageStatistics imageStats = new ImageStatistics();
-            double minexposuretime = (double)ActiveCamera.ExposureTime_MIN;
+            double minexposuretime = 0.00005; //0.00005s
             if (imageChannelSettings.AutoExposureUpperCeiling > 0 &&
                 imageChannelSettings.AutoExposureUpperCeiling != upperCeiling)
             {
@@ -395,6 +229,7 @@ namespace Azure.ScannerEUI.SystemCommand
                 //{
                 //    upperCeiling = imageChannelSettings.AutoExposureUpperCeiling;
                 //}
+                exposureTime = imageChannelSettings.ChemiInitialExposureTime; // Initial exposure for None light source  
             }
             else
             {
@@ -404,45 +239,49 @@ namespace Azure.ScannerEUI.SystemCommand
                     imageChannelSettings.LightType == 4)
                 {
 
-                    exposureTime = imageChannelSettings.InitialExposureTime;    // Initial exposure for R/G/B light source
+                    exposureTime = imageChannelSettings.InitialExposureTime;    // Initial exposure for R/G/B/W light source  
                 }
 
                 signalTooHighTestExposure = Math.Round((exposureTime / 10.0), 5);
-                if (signalTooHighTestExposure < minexposuretime) //0.05ms
-                    signalTooHighTestExposure = minexposuretime;
+                if (signalTooHighTestExposure < 0.001) 
+                    signalTooHighTestExposure = 0.001;
                 signalTooWeakTestExposure = Math.Round((exposureTime * 30), 3);
             }
+
+            // Set the ROI (10% from the edges)
+            int roiX = (int)(ActiveCamera.Width * 0.1);
+            int roiY = (int)(ActiveCamera.Height * 0.1);
+            int roiWidth = (int)(ActiveCamera.Width * 0.8);
+            int roiHeight = (int)(ActiveCamera.Height * 0.8);
+            System.Drawing.Rectangle rectROI = new System.Drawing.Rectangle(roiX, roiY, roiWidth, roiHeight);
+            double us = ActiveCamera.USConvertMS * ActiveCamera.USConvertMS;
+
             WriteableBitmap wbCapturedBitmap = null;
             try
             {
                 while (true)
                 {
-                    if (ActiveCamera.SetExpoTime((uint)(exposureTime * ActiveCamera.USConvertMS)))
+                    if (ActiveCamera.SetExpoTime((uint)(exposureTime * us)))
                     {
                         ActiveCamera.CapturesImage(ref wbCapturedBitmap);
                     }
                     WriteableBitmap biasImage = null;
-                    if (SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection)
+
+                    biasImage = Workspace.This.MasterLibrary.GetBiasImage(1);
+
+                    if (biasImage != null)
                     {
-                        // PvCam: using dynamic dark correction
+                        wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
                     }
                     else
                     {
-                        biasImage = Workspace.This.MasterLibrary.GetBiasImage(imageChannelSettings.BinningMode);
-
-                        if (biasImage != null)
-                        {
-                            wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
-                        }
-                        else
-                        {
-                            string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
-                            throw new Exception(strMessage);
-                        }
+                        string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
+                        throw new Exception(strMessage);
                     }
+
                     int Biasmean = (int)imageStats.GetMean(biasImage);
                     wbCapturedBitmap = ImageProcessing.MedianFilter(wbCapturedBitmap);
-                    maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap);
+                    maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap, rectROI);
                     if (maxPixelValue > upperCeiling)
                     {
                         if (exposureTime != signalTooHighTestExposure)
@@ -453,12 +292,12 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
                         else
                         {
-                            // Signal too strong, default to 0.05 msec for Photometrics camera.
+                            // Signal too strong, default to 0.00005 sec for Photometrics camera.
                             exposureTime = minexposuretime;
                             break;
                         }
                     }
-                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 200) 
+                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 200)
                     {
                         exposureTime = Math.Round(((upperCeiling - Biasmean) / (maxPixelValue)) * exposureTime, 3);
                         //exposureTime = (upperCeiling / maxPixelValue) * exposureTime;
@@ -477,30 +316,25 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
 
                         wbCapturedBitmap = null;
-                        if (ActiveCamera.SetExpoTime((uint)(exposureTime * ActiveCamera.USConvertMS)))
+                        if (ActiveCamera.SetExpoTime((uint)(exposureTime * us)))
                         {
                             ActiveCamera.CapturesImage(ref wbCapturedBitmap);
                         }
-                        if (SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection)
+
+                        biasImage = Workspace.This.MasterLibrary.GetBiasImage(1);
+
+                        if (biasImage != null)
                         {
-                            // PvCam: using dynamic dark correction
+                            wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
                         }
                         else
                         {
-                            biasImage = Workspace.This.MasterLibrary.GetBiasImage(imageChannelSettings.BinningMode);
-
-                            if (biasImage != null)
-                            {
-                                wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
-                            }
-                            else
-                            {
-                                string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
-                                throw new Exception(strMessage);
-                            }
+                            string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
+                            throw new Exception(strMessage);
                         }
+
                         wbCapturedBitmap = ImageProcessing.MedianFilter(wbCapturedBitmap);
-                        maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap);
+                        maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap, rectROI);
                         if (maxPixelValue > 200)
                         {
                             int binningMode = imageChannelSettings.BinningMode;
@@ -521,12 +355,12 @@ namespace Azure.ScannerEUI.SystemCommand
             }
             catch (System.Threading.ThreadAbortException)
             {
-                exposureTime = minexposuretime; //ms
+                exposureTime = minexposuretime;
                 throw;
             }
             catch (Exception ex)
             {
-                exposureTime = minexposuretime; //ms
+                exposureTime = minexposuretime;
                 System.Diagnostics.Debug.WriteLine(ex.Message);
                 throw;
             }
@@ -551,7 +385,7 @@ namespace Azure.ScannerEUI.SystemCommand
             double signalTooHighTestExposure = exposureTime / 10.0;
             double signalTooWeakTestExposure = exposureTime * 4.0;
             ImageStatistics imageStats = new ImageStatistics();
-            double minexposuretime = (double)ActiveCamera.ExposureTime_MIN;
+            double minexposuretime = 0.00005; //0.00005s
             if (imageChannelSettings.AutoExposureUpperCeiling > 0 &&
                 imageChannelSettings.AutoExposureUpperCeiling != upperCeiling)
             {
@@ -574,45 +408,48 @@ namespace Azure.ScannerEUI.SystemCommand
                     imageChannelSettings.LightType == 4)
                 {
 
-                    exposureTime = imageChannelSettings.InitialExposureTime;    // Initial exposure for R/G/B light source
+                    exposureTime = imageChannelSettings.InitialExposureTime;    // Initial exposure for R/G/B/W light source
                 }
 
                 signalTooHighTestExposure = Math.Round((exposureTime / 10.0), 5);
-                if (signalTooHighTestExposure < minexposuretime) //0.05ms
-                    signalTooHighTestExposure = minexposuretime;
+                if (signalTooHighTestExposure < 0.001)
+                    signalTooHighTestExposure = 0.001;
                 signalTooWeakTestExposure = Math.Round((exposureTime * 30), 3);
             }
+            // Set the ROI (10% from the edges)
+            int roiX = (int)(ActiveCamera.Width * 0.1);
+            int roiY = (int)(ActiveCamera.Height * 0.1);
+            int roiWidth = (int)(ActiveCamera.Width * 0.8);
+            int roiHeight = (int)(ActiveCamera.Height * 0.8);
+            System.Drawing.Rectangle rectROI = new System.Drawing.Rectangle(roiX, roiY, roiWidth, roiHeight);
+            double us = ActiveCamera.USConvertMS * ActiveCamera.USConvertMS;
+
             WriteableBitmap wbCapturedBitmap = null;
             try
             {
                 while (true)
                 {
-                    if (ActiveCamera.SetExpoTime((uint)(exposureTime * ActiveCamera.USConvertMS)))
+                    if (ActiveCamera.SetExpoTime((uint)(exposureTime * us)))
                     {
                         ActiveCamera.CapturesImage(ref wbCapturedBitmap);
                     }
                     WriteableBitmap biasImage = null;
-                    if (SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection)
+
+                    biasImage = Workspace.This.MasterLibrary.GetBiasImage(1);
+
+                    if (biasImage != null)
                     {
-                        // PvCam: using dynamic dark correction
+                        wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
                     }
                     else
                     {
-                        biasImage = Workspace.This.MasterLibrary.GetBiasImage(imageChannelSettings.BinningMode);
-
-                        if (biasImage != null)
-                        {
-                            wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
-                        }
-                        else
-                        {
-                            string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
-                            throw new Exception(strMessage);
-                        }
+                        string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
+                        throw new Exception(strMessage);
                     }
+
                     int Biasmean = (int)imageStats.GetMean(biasImage);
                     wbCapturedBitmap = ImageProcessing.MedianFilter(wbCapturedBitmap);
-                    maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap);
+                    maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap, rectROI);
                     if (maxPixelValue > upperCeiling)
                     {
                         if (exposureTime != signalTooHighTestExposure)
@@ -623,12 +460,12 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
                         else
                         {
-                            // Signal too strong, default to 0.05 msec for Photometrics camera.
+                            // Signal too strong, default to 0.00005 sec for Photometrics camera.
                             exposureTime = minexposuretime;
                             break;
                         }
                     }
-                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 200) 
+                    else if (maxPixelValue <= upperCeiling && maxPixelValue > 200)
                     {
                         exposureTime = Math.Round(((upperCeiling - Biasmean) / (maxPixelValue)) * exposureTime, 3);
                         //exposureTime = (upperCeiling / maxPixelValue) * exposureTime;
@@ -657,30 +494,25 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
 
                         wbCapturedBitmap = null;
-                        if (ActiveCamera.SetExpoTime((uint)(exposureTime * ActiveCamera.USConvertMS)))
+                        if (ActiveCamera.SetExpoTime((uint)(exposureTime * us)))
                         {
                             ActiveCamera.CapturesImage(ref wbCapturedBitmap);
                         }
-                        if (SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection)
+
+                        biasImage = Workspace.This.MasterLibrary.GetBiasImage(1);
+
+                        if (biasImage != null)
                         {
-                            // PvCam: using dynamic dark correction
+                            wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
                         }
                         else
                         {
-                            biasImage = Workspace.This.MasterLibrary.GetBiasImage(imageChannelSettings.BinningMode);
-
-                            if (biasImage != null)
-                            {
-                                wbCapturedBitmap = imgArith.SubtractImage(wbCapturedBitmap, biasImage);
-                            }
-                            else
-                            {
-                                string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
-                                throw new Exception(strMessage);
-                            }
+                            string strMessage = "AE ERROR: Cannot find bias image, master library contains no bias image for binning mode '1x1";
+                            throw new Exception(strMessage);
                         }
+
                         wbCapturedBitmap = ImageProcessing.MedianFilter(wbCapturedBitmap);
-                        maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap);
+                        maxPixelValue = imageStats.GetPixelMax(wbCapturedBitmap, rectROI);
                         if (maxPixelValue > 200)
                         {
                             int binningMode = imageChannelSettings.BinningMode;
@@ -741,7 +573,7 @@ namespace Azure.ScannerEUI.SystemCommand
         /// <returns></returns>
         public unsafe static double ChemiSOLO_Calculate_New_Algo_ImageAutoExposure(CameraController ActiveCamera, EthernetController CommController, ImageChannelSettings imageChannelSettings, double Chemi_T1, string Str_Chemi_binning_Kxk, int Chemi_Intensity)
         {
-            double exposureTime = Chemi_T1;          // exposure  ms
+            double exposureTime = Chemi_T1;          // exposure  sec
             double minexposuretime = (double)ActiveCamera.ExposureTime_MIN;
             WriteableBitmap wbCapturedBitmap = null;
             WriteableBitmap biasImage = null;
@@ -755,15 +587,16 @@ namespace Azure.ScannerEUI.SystemCommand
                 int i = 0;
                 string[] listbin = Str_Chemi_binning_Kxk.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);//10,3,1
                 int Chemi_binning_Kxk = Convert.ToInt32(listbin[i]);
+                double us = ActiveCamera.USConvertMS * ActiveCamera.USConvertMS; //秒转微秒
                 while (apFlag || saturationFlag)
                 {
                     if (apFlag)
                     {
-                        if (ActiveCamera.SetExpoTime((uint)(exposureTime * ActiveCamera.USConvertMS)))
+                        if (ActiveCamera.SetExpoTime((uint)(exposureTime * us)))
                         {
                             ActiveCamera.CapturesImage(ref wbCapturedBitmap);
                         }
-                        biasImage = Workspace.This.MasterLibrary.GetBiasImage(imageChannelSettings.BinningMode);
+                        biasImage = Workspace.This.MasterLibrary.GetBiasImage(1);
 
                         if (biasImage != null)
                         {
@@ -800,8 +633,7 @@ namespace Azure.ScannerEUI.SystemCommand
                         }
 
                     }
-                    double SecExposure = exposureTime / 1000;
-                    exposureTime = upperCeiling / l1subl2 * Chemi_binning_Kxk * Chemi_binning_Kxk * SecExposure;
+                    exposureTime = upperCeiling / l1subl2 * Chemi_binning_Kxk * Chemi_binning_Kxk * exposureTime;
                     return exposureTime;
                 }
             }

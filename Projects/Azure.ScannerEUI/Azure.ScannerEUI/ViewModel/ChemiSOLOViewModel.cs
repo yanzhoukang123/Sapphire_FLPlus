@@ -283,7 +283,7 @@ namespace Azure.ScannerEUI.ViewModel
                 {
                     _SelectedApplication = value;
                     RaisePropertyChanged("SelectedApplication");
-                    Protocol();
+                    combinatorial();
                 }
             }
         }
@@ -348,7 +348,7 @@ namespace Azure.ScannerEUI.ViewModel
                 {
                     _SelectedMarker = value;
                     RaisePropertyChanged("SelectedMaker");
-                    Protocol();
+                    combinatorial();
                 }
             }
         }
@@ -380,8 +380,8 @@ namespace Azure.ScannerEUI.ViewModel
                 if (value != _SelectedExposureType)
                 {
                     _SelectedExposureType = value;
-                    Protocol();
                     RaisePropertyChanged("SelectedExposureType");
+                    combinatorial();
                     //if (value.Type == ChemiExposureType.Manual && SelectedImagingMode.Type == ChemiModeType.Multiple)
                     //{
                     //    SelectedImagingMode = _ImagingModeOptions[0];
@@ -419,7 +419,7 @@ namespace Azure.ScannerEUI.ViewModel
                 {
                     _SelectedImagingMode = value;
                     RaisePropertyChanged("SelectedImagingMode");
-                    Protocol();
+                    combinatorial();
                 }
             }
         }
@@ -441,7 +441,7 @@ namespace Azure.ScannerEUI.ViewModel
                 {
                     _SelectedBinning = value;
                     RaisePropertyChanged("SelectedBinning");
-                    Protocol();
+                    combinatorial();
                 }
             }
         }
@@ -499,6 +499,7 @@ namespace Azure.ScannerEUI.ViewModel
                 Parameter.rgbimagegain = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.RGBImageGain;
                 Parameter.chemiimagegain = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.ChemiImageGain;
                 Parameter.Chemi_NewAlgo_Enable = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.Chemi_NewAlgo_Enable;
+                //In seconds.
                 Parameter.Chemi_T1 = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.Chemi_T1;
                 Parameter.Chemi_binning_Kxk = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.Chemi_binning_Kxk;
                 Parameter.Chemi_Intensity = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.Chemi_Intensity;
@@ -510,39 +511,45 @@ namespace Azure.ScannerEUI.ViewModel
                 Parameter.paramA = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.paramA;
                 Parameter.paramB = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.paramB;
                 Parameter.paramC = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.paramC;
-                Parameter.BlotFindExposureTime = (uint)(SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.BlotFindExposureTime * Workspace.This.CameraController.USConvertMS);
+                //Convert units of seconds to microseconds
+                Parameter.BlotFindExposureTime = (uint)(SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.BlotFindExposureTime * Workspace.This.CameraController.USConvertMS * Workspace.This.CameraController.USConvertMS);
                 Parameter.SampleType_threshold = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.SampleType_threshold;
                 Parameter.BlotPvCamScalingThreshold = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.BlotPvCamScalingThreshold;
                 Parameter.GelPvCamScalingThreshold = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.GelPvCamScalingThreshold;
-                if (SelectedExposureType.Type == ChemiExposureType.RapidCapture)
+                Parameter.upperCeiling = 55000;
+                if (SelectedApplication.Applicationn==ChemiApplicationType.Chemi_Imaging&&SelectedExposureType.Type == ChemiExposureType.RapidCapture && SelectedImagingMode.Type != ChemiModeType.Multiple)
                 {
                     Parameter.upperCeiling = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.RapidCapture;
                 }
-                else if (SelectedExposureType.Type == ChemiExposureType.Overexposure)
+                else if (SelectedApplication.Applicationn == ChemiApplicationType.Chemi_Imaging && SelectedExposureType.Type == ChemiExposureType.Overexposure && SelectedImagingMode.Type != ChemiModeType.Multiple)
                 {
                     Parameter.upperCeiling = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.OverExposeure;
                 }
-                else if (SelectedExposureType.Type == ChemiExposureType.Extended_Dynamic_Range)
+                else if (SelectedApplication.Applicationn == ChemiApplicationType.Chemi_Imaging && SelectedExposureType.Type == ChemiExposureType.Extended_Dynamic_Range && SelectedImagingMode.Type != ChemiModeType.Multiple)
                 {
                     Parameter.upperCeiling = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.DynamicRange;
                     Parameter.bit = Selectedbit.Value;
                 }
-                else if (SelectedExposureType.Type == ChemiExposureType.Manual)
+                else if (SelectedApplication.Applicationn == ChemiApplicationType.Chemi_Imaging && SelectedExposureType.Type == ChemiExposureType.Manual&& SelectedImagingMode.Type != ChemiModeType.Multiple)
                 {
                     Parameter.isAutoexposure = false;
-                    uint us_exposuretime = (uint)(Workspace.This.ManualExposureViewModel.ExposureTime * Workspace.This.CameraController.USConvertMS);
+                    //Converting units of seconds to microseconds
+                    uint us_exposuretime = (uint)(Workspace.This.ManualExposureViewModel.ExposureTime * Workspace.This.CameraController.USConvertMS * Workspace.This.CameraController.USConvertMS);
                     Parameter.exposureTime = us_exposuretime;
-                    Parameter.upperCeiling = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.RapidCapture;
+                }
+                if (SelectedApplication.Applicationn == ChemiApplicationType.Chemi_Imaging && SelectedImagingMode.Type == ChemiModeType.Multiple && SelectedImagingMode.Type == ChemiModeType.Multiple)
+                {
+                    Parameter.isAutoexposure = false;
+                    int exposurtlistcount = Workspace.This.MultipleExposureViewModel.MultipleExposureList.Count;
+                    for (int i = 0; i < exposurtlistcount; i++)
+                    {
+                        //Converting units of seconds to microseconds
+                        Parameter.multipleExposureList.Add((uint)(Workspace.This.MultipleExposureViewModel.MultipleExposureList[i] * Workspace.This.CameraController.USConvertMS * Workspace.This.CameraController.USConvertMS));
+                    }
                 }
                 Parameter.width = Workspace.This.CameraController.CaptureImage_Width;
                 Parameter.height = Workspace.This.CameraController.CaptureImage_Height;
                 Parameter.name= Workspace.This.GenerateChemiSOLOFileName(string.Empty, string.Empty);
-                int exposurtlistcount = Workspace.This.MultipleExposureViewModel.MultipleExposureList.Count;
-                for (int i = 0; i < exposurtlistcount; i++)
-                {
-                    Parameter.multipleExposureList.Add((uint)(Workspace.This.MultipleExposureViewModel.MultipleExposureList[i] * Workspace.This.CameraController.USConvertMS));
-                }
-
                 _ImageCaptureCommand = new ChemiSOLOCaptureCommand(Workspace.This.Owner.Dispatcher,
                                            Workspace.This.EthernetController,
                                            Workspace.This.CameraController,
@@ -710,14 +717,8 @@ namespace Azure.ScannerEUI.ViewModel
         #endregion
 
 
-        private void Protocol()
+        private void combinatorial()
         {
-            //if (_SelectedExposureType == null)
-            //{
-            //    _SelectedExposureType = _ExposureTypeOptions[0];
-            //    RaisePropertyChanged("SelectedExposureType");
-            //}
-            //
             if (_SelectedApplication.Applicationn == ChemiApplicationType.Chemi_Imaging &&
                 _SelectedBinning.HorizontalBins == 1 &&
                 _SelectedMarker.Type == ChemiMarkerType.None &&
@@ -736,13 +737,28 @@ namespace Azure.ScannerEUI.ViewModel
             }
             else
             {
-                if (_SelectedExposureType.Type==ChemiExposureType.Extended_Dynamic_Range)
+                if (_SelectedExposureType == null)
                 {
-                    if (_ExposureTypeOptions.Count == 4)
+                    _SelectedExposureType = _ExposureTypeOptions[0];
+                    RaisePropertyChanged("SelectedExposureType");
+                }
+                else
+                {
+                    if (_SelectedExposureType.Type == ChemiExposureType.Extended_Dynamic_Range
+                        || _SelectedMarker.Type != ChemiMarkerType.None
+                        || _SelectedBinning.HorizontalBins != 1
+                        || _SelectedImagingMode.Type != ChemiModeType.Single)
+                    {
+                        if (_ExposureTypeOptions.Count == 4)
+                        {
+                            _SelectedExposureType = _ExposureTypeOptions[0];
+                            RaisePropertyChanged("SelectedExposureType");
+                            _ExposureTypeOptions.RemoveAt(3);
+                        }
+                    }
+                    else
                     {
                         _SelectedExposureType = _ExposureTypeOptions[0];
-                        RaisePropertyChanged("SelectedExposureType");
-                        _ExposureTypeOptions.RemoveAt(3);
                     }
                 }
             }
@@ -775,7 +791,7 @@ namespace Azure.ScannerEUI.ViewModel
                 IsEDR = Visibility.Hidden;
                 IsExposure = Visibility.Visible;
             }
-            else if ( _SelectedImagingMode.Type == ChemiModeType.Cumulative && _SelectedExposureType.Type == ChemiExposureType.Manual)
+            else if (_SelectedImagingMode.Type == ChemiModeType.Cumulative && _SelectedExposureType.Type == ChemiExposureType.Manual)
             {
                 IsMultipleExposure = Visibility.Hidden;
                 IsEDR = Visibility.Hidden;

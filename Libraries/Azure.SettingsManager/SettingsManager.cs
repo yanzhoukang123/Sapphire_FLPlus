@@ -1563,21 +1563,15 @@ namespace Azure.Configuration
                             flatsAutoOptiVal = 40000;
                         }
                         ConfigSettings.CameraModeSettings.ChemiSettings.FlatsAutoExposureOptimal = flatsAutoOptiVal;
-                        selectedNode = nav.SelectSingleNode("IsDynamicDarkCorrection");
-                        bool flag;
                         string ddfcValue = selectedNode.Value;
-                        if (!Boolean.TryParse(ddfcValue, out flag))
-                        {
-                            flag = false;
-                        }
-                        ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection = flag;
+                        bool flag;
                         selectedNode = nav.SelectSingleNode("MaxExposure");
                         if (selectedNode != null)
                         {
                             double maxExposure;
                             if (!Double.TryParse(selectedNode.Value, out maxExposure))
                             {
-                                maxExposure = 1800.0d;
+                                maxExposure = 3600.0d;
                             }
                             ConfigSettings.CameraModeSettings.ChemiSettings.MaxExposure = maxExposure;
                         }

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
@@ -69,15 +70,10 @@ namespace Azure.ScannerEUI.SystemCommand
             WriteableBitmap wbCapturedBitmap = null;
             try
             {
-                double us = 0;
+                double us = _ActiveCamera.USConvertMS * _ActiveCamera.USConvertMS;
                 if (_ImageChannel.IsAutoExposure)
                 {
                     _ImageChannel.Exposure = ImagingSystemHelper.ChemiSOLO_CalculateFlatImageAutoExposure(_ActiveCamera, _CommController, _ImageChannel);
-                    us = _ActiveCamera.USConvertMS;  //ms 
-                }
-                else
-                {
-                    us = _ActiveCamera.USConvertMS * _ActiveCamera.USConvertMS; //sec
                 }
                 if (_ActiveCamera.SetExpoTime((uint)(_ImageChannel.Exposure * us)))
                 {
@@ -92,20 +88,43 @@ namespace Azure.ScannerEUI.SystemCommand
                     return;
                 }
                 WriteableBitmap darkCorrectedImage = null;
-                if (SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.IsDynamicDarkCorrection)
-                {
-                    darkCorrectedImage = wbCapturedBitmap;  // PvCam currently using the camera's dynamic dark correction.
-                }
-                else
-                {
-                    // Apply bias and darkmaster correction (darkmaster is not applied if exposure time is less than 1 second)
-                    darkCorrectedImage = Workspace.This.MasterLibrary.ChemiSOLO_CalculateCorrectedImage(
-                                                wbCapturedBitmap,
-                                                _ImageChannel.Exposure,
-                                                _ImageChannel.BinningMode,
-                                                out darkCorrection);
-                }
+                darkCorrectedImage = wbCapturedBitmap;
+                // 这个方法中减去bias图像和应用了DarkCorrection
+                //darkCorrectedImage = Workspace.This.MasterLibrary.ChemiSOLO_CalculateCorrectedImage(
+                //                            wbCapturedBitmap,
+                //                            _ImageChannel.Exposure,
+                //                            _ImageChannel.BinningMode,
+                //                            out darkCorrection);
+
+                //该方法中只减去了bias图像
+                darkCorrectedImage = Workspace.This.MasterLibrary.ChemiSOLO_CalculateCorrectedImage_SubtractBias(
+                                            wbCapturedBitmap,
+                                            _ImageChannel.Exposure,
+                                            _ImageChannel.BinningMode,
+                                            out darkCorrection);
+
+                //应用了过滤方法
+                // Resize the original image before apply the filter
+                //int iOrigWidth = darkCorrectedImage.PixelWidth;
+                //int iOrigHeight = darkCorrectedImage.PixelHeight;
+                //int iWidth = iOrigWidth / 2;
+                //int iHeight = iOrigHeight / 2;
+
+                //Size newImageSize = new Size(iWidth, iHeight);
+                //WriteableBitmap flatImage = ImageProcessing.Resize(darkCorrectedImage, newImageSize);
+
+                //// Apply gaussian filtering on the image with 40x40 kernel
+                //System.Drawing.Size kernelSize = new System.Drawing.Size(40, 40);
+                //FastGaussianFilter gaussianFilter = new FastGaussianFilter(kernelSize);
+                //gaussianFilter.Apply(ref flatImage);
+
+                //// Resize to the original size
+                //newImageSize = new Size(iOrigWidth, iOrigHeight);
+                //FlatImage = ImageProcessing.Resize(flatImage, newImageSize);
+
+                //直接返回减去bias图像的结果图像
                 FlatImage = darkCorrectedImage;
+
                 if (FlatImage.CanFreeze) { FlatImage.Freeze(); }
 
             }

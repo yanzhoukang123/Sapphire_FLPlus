@@ -7479,7 +7479,8 @@ namespace Azure.ScannerEUI.ViewModel
                 {
                     //LED Process
                     This.CameraModeViewModel.CameraLed_Process += This.CameraModeViewModel.Step;
-                    Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(This.CameraModeViewModel.CameraLed_Process));
+                    if(This.CameraModeViewModel.CameraLed_Process<=100)
+                       Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(This.CameraModeViewModel.CameraLed_Process));
                     estTimeRemain = Math.Max(0, estimatedCaptureTimeInSec - elapsedTime.TotalSeconds);
                     percentCompete = 100.0 * elapsedTime.TotalSeconds / estimatedCaptureTimeInSec;
                 }

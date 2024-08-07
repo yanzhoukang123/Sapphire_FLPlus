@@ -13,6 +13,39 @@ namespace Azure.Image.Processing
         #region IImageStatistics Members
 
         /// <summary>
+        /// Get the image pixel average of a 5x5 region around the max pixel.
+        /// </summary>
+        /// <param name="srcImage"></param>
+        /// <returns></returns>
+        public  unsafe double GetImagePixelAverage5x5(WriteableBitmap srcImage, ref double average, ref System.Drawing.Point ptMax)
+        {
+            if (srcImage == null) { return 0; }
+
+            ImageStatistics imageStat = new ImageStatistics();
+            average = 0.0;
+
+            int imgWidth = srcImage.PixelWidth;
+            int imgHeight = srcImage.PixelHeight;
+            // No long look at in the middle of the image in a 500x500 area (Sapphire).
+            //int roiWidth = 500;
+            //int roiHeight = 500;
+            int roiWidth = srcImage.PixelWidth - 6;     //3 pixel from the edges (left & right)
+            int roiHeight = srcImage.PixelHeight - 6;   //3 pixel from the edges (top & bottom)
+
+            // find the max pixel within the ROI in the center of the image
+            System.Drawing.Rectangle rect1 = new System.Drawing.Rectangle((imgWidth - roiWidth) / 2, (imgHeight - roiHeight) / 2, roiWidth, roiHeight);
+            ptMax = imageStat.FindMaximumPixel(srcImage, rect1);
+
+            // get the average of the 5x5 region around the max point
+            roiWidth = 5;
+            roiHeight = 5;
+            System.Drawing.Rectangle rect2 = new System.Drawing.Rectangle(ptMax.X - 2, ptMax.Y - 2, roiWidth, roiHeight);
+            average = imageStat.GetAverage(srcImage, rect2);
+
+            return average;
+        }
+
+        /// <summary>
         /// Method to calculate total sum value of all pixels in a given Rect on the image
         /// </summary>
         public unsafe double GetTotalSum(WriteableBitmap srcimg, Rectangle rectROI)

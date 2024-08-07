@@ -58,7 +58,7 @@ namespace Azure.ScannerEUI.ViewModel
             // Exposure time dropdown
             DataKey myDataKey = null;
             _ExposureTimeOptions = new ObservableCollection<DataKey>();
-            myDataKey = new DataKey(0, "0");
+            myDataKey = new DataKey(0.00005, "0.05ms");
             _ExposureTimeOptions.Add(myDataKey);
             myDataKey = new DataKey(10, "10sec");
             _ExposureTimeOptions.Add(myDataKey);
@@ -187,7 +187,7 @@ namespace Azure.ScannerEUI.ViewModel
                 RaisePropertyChanged("SelectedFrameCount");
                 if (_SelectedFrameCount != null)
                 {
-                    FrameCount = _SelectedFrameCount.Value;
+                    FrameCount = (int)_SelectedFrameCount.Value;
                 }
             }
         }
@@ -439,7 +439,7 @@ namespace Azure.ScannerEUI.ViewModel
                                                       binModes,
                                                       exposureTimes,
                                                       targetDirectory,
-                                                      SelectedFrameCount.Value);
+                                                      (int)SelectedFrameCount.Value);
 
                 _CreateDarkmasterCaptureCommand.Completed += new CommandLib.ThreadBase.CommandCompletedHandler(_CreateDarkmasterCaptureCommand_Completed);
                 _CreateDarkmasterCaptureCommand.ProgressChanged += new DarkmasterCaptureCommand.ProgressChangedHandler(_CreateDarkmasterCaptureCommand_ProgressChanged);
@@ -460,6 +460,11 @@ namespace Azure.ScannerEUI.ViewModel
         {
             Workspace.This.Owner.Dispatcher.Invoke((Action)delegate
             {
+                Workspace.This.Owner.Dispatcher.BeginInvoke((Action)delegate
+                {
+                    FrameCount = 0;
+                    CurrentFrame = 0;
+                });
                 IsCreatingSingleDarkmaster = false;
                 Workspace.This.CameraModeViewModel.IsCameraPanel = true;
                 Workspace.This.CameraModeViewModel.IsCameraEnabled = true;
@@ -544,10 +549,10 @@ namespace Azure.ScannerEUI.ViewModel
 
         public class DataKey
         {
-            public int Value { get; set; }
+            public double Value { get; set; }
             public string DisplayName { get; set; }
 
-            public DataKey(int value, string displayName)
+            public DataKey(double value, string displayName)
             {
                 this.Value = value;
                 this.DisplayName = displayName;

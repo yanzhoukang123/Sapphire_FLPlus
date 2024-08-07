@@ -139,6 +139,7 @@ namespace Azure.ScannerEUI.ViewModel
                         {
                             _TopMagneticState = value;
                             Workspace.This.TopMagneticStatus = (bool)_TopMagneticState;
+                            Thread.Sleep(1000);
                             CloseMessageBox_ChemiMode();
                             FrontDoorCloseMonitoring_ChemiMode();
                         }
@@ -840,7 +841,6 @@ namespace Azure.ScannerEUI.ViewModel
                     Workspace.This.IsLoading(true, "Searching for camera. Please wait...");
                     while (!Workspace.This.CameraController.Initialize())
                     {
-                        Workspace.This.RaisePropertyChanged_TopMagneticStatus();
                         Thread.Sleep(1000);
                     }
                     //获取所有IV板子的信息
@@ -865,7 +865,6 @@ namespace Azure.ScannerEUI.ViewModel
             {
                 Application.Current.Dispatcher.Invoke((Action)delegate
                 {
-                    Thread.Sleep(1000);
                     mbw.Hide();
                 });
             }

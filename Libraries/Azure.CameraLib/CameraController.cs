@@ -170,14 +170,15 @@ namespace Azure.CameraLib
 
                 }
                 info = new Toupcam.FrameInfoV3();
-                //视频模式
-                cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, 0);
+                ////视频模式
+                //cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, 0);
                 //TEC 1=启动TEC,0=关闭TEC。 
                 cam_.put_Option(Toupcam.eOPTION.OPTION_TEC, 1);
                 IsCameraConnected = true;
                 SetCCDTemp(-10);//设置-10
-                if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
-                    return false;
+                ChangeCaptureMode(1);
+                //if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
+                //    return false;
                 return true;
             }
             return false;
@@ -399,7 +400,10 @@ namespace Azure.CameraLib
         public unsafe bool CapturesImage(ref WriteableBitmap capturedImage)
         {
             //更改为触发模式，这个模式下可以控制相机拍摄的图片张数，比如1张，或者一直循环。
-            ChangeCaptureMode(1);
+            if (!ChangeCaptureMode(1))
+                return false;
+            int currentMode = 0;
+            cam_.get_Option(Toupcam.eOPTION.OPTION_TRIGGER, out currentMode);
             if (ChangeTriggerMode(1))//捕获一张
             {
                 SingeCapture = true;
@@ -430,16 +434,18 @@ namespace Azure.CameraLib
             cam_.get_Option(Toupcam.eOPTION.OPTION_TRIGGER, out currentMode);
             if (mode != currentMode)
             {
-                cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, mode);
-                Thread.Sleep(300);
+                if(!cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, mode))
+                    return false;
             }
-            if (mode == 0 && currentMode != 0)
+            if (mode == 0 && currentMode != 0) //Live模式
             {
-                cam_.Stop();
+                if (!cam_.Stop())
+                    return false;
                 ///*.
                 //  0 = 表示使用8Bits位深度.
                 //  1 = 表示使用本相机支持的最高位深度*/
-                cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 0);
+                if (!cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 0))
+                    return false;
                 //相机支持的最大位深度(bitdepth)
                 /* 0 = 使用RGB24
                    1 = 在位深度 > 8时, 启用RGB48格式
@@ -447,17 +453,20 @@ namespace Azure.CameraLib
                    3 = 8位灰度(只对黑白相机有效)
                    4 = 16位灰度(只对黑白相机并且位深度 > 8时有效)
                    5 = 在位深度 > 8时, 启用RGB64格式 */
-                cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 2);
+                if (!cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 2))
+                    return false;
                 if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
                     return false;
             }
-            else if (mode == 1 && currentMode != 1)
+            else if (mode == 1 && currentMode != 1)//触发模式
             {
-                cam_.Stop();
+                if (!cam_.Stop())
+                    return false;
                 ///*.
                 //  0 = 表示使用8Bits位深度.
                 //  1 = 表示使用本相机支持的最高位深度*/
-                cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 1);
+                if (!cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 1))
+                    return false;
                 //相机支持的最大位深度(bitdepth)
                 /* 0 = 使用RGB24
                    1 = 在位深度 > 8时, 启用RGB48格式
@@ -465,7 +474,8 @@ namespace Azure.CameraLib
                    3 = 8位灰度(只对黑白相机有效)
                    4 = 16位灰度(只对黑白相机并且位深度 > 8时有效)
                    5 = 在位深度 > 8时, 启用RGB64格式 */
-                cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 4);
+                if (!cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 4))
+                    return false;
                 if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
                     return false;
             }

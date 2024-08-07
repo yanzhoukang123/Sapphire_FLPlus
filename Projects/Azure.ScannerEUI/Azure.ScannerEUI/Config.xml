@@ -358,23 +358,22 @@
   <ChemiSOLOSettings>
     <!--Cumulative/Multiple 最大张数 -->
     <NumFrames>10</NumFrames>
-    <!--拍摄DarkMaster图像使用的增益数 -->
-    <Gain>300</Gain>
+    <!--拍摄/Bias/DarkMaster/Flat/图像使用的增益数 -->
+    <Gain>100</Gain>
     <!--拍摄RGB图像使用的增益数 -->
-    <RGBImageGain>1</RGBImageGain>
+    <RGBImageGain>100</RGBImageGain>
     <!--拍摄Chemi图像使用的增益数 -->
     <ChemiImageGain>100</ChemiImageGain>
     <!--计算自动曝光时间的上限值 -->
-    <FlatsAutoExposureOptimal>55000</FlatsAutoExposureOptimal>
+    <FlatsAutoExposureOptimal>40000</FlatsAutoExposureOptimal>
     <RapidCapture>35000</RapidCapture>
     <DynamicRange>50000</DynamicRange>
     <OverExposeure>50000</OverExposeure>
-    <IsDynamicDarkCorrection>False</IsDynamicDarkCorrection>
-    <MaxExposure>1800</MaxExposure>
-    <!--拍摄RGB光源图像时，自动曝光算法中所用到的初始曝光时间-->
-    <InitialExposureTime>0.05</InitialExposureTime>
-    <!--拍摄Chemi图像时，自动曝光算法中所用到的初始曝光时间-->
-    <ChemiInitialExposureTime>10</ChemiInitialExposureTime>
+    <MaxExposure>3600</MaxExposure>
+    <!--拍摄RGBW光源图像时，自动曝光算法中所用到的初始曝光时间 0.002秒-->
+    <InitialExposureTime>0.002</InitialExposureTime>
+    <!--拍摄None光源图像时，自动曝光算法中所用到的初始曝光时间 1秒-->
+    <ChemiInitialExposureTime>1</ChemiInitialExposureTime>
     <!--拍摄Chemi图像时，使用新曝光时间算法？-->
     <Chemi_NewAlgo_Enable>True</Chemi_NewAlgo_Enable>
     <Chemi_T1>1</Chemi_T1>
@@ -393,14 +392,15 @@
     <ParamA>0.0</ParamA>
     <ParamB>0.020</ParamB>
     <ParamC>0.0</ParamC>
-    <!--查找Blot图像类型时默认的曝光时间-->
-    <BlotFindExposureTime>10</BlotFindExposureTime>
+    <!--查找Blot图像类型时默认的曝光时间 0.01秒-->
+    <BlotFindExposureTime>0.01</BlotFindExposureTime>
     <!--背景大于下面的阈值代表图像是GEL类型，否则是Blot类型-->
     <SampleType_threshold>80</SampleType_threshold>
     <!--白平衡算法中前景图像用到的阈值-->
     <BlotPvCamScalingThreshold>55000</BlotPvCamScalingThreshold>
     <!--白平衡算法中背景图像用到的阈值-->
     <GelPvCamScalingThreshold>40000</GelPvCamScalingThreshold>
-  </ChemiSOLOSettings>
+  
+</ChemiSOLOSettings>
 
 </Config>

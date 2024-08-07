@@ -116,8 +116,6 @@ namespace Azure.ImagingSystem
         public int NumFrames { get; set; }
         public int Gain { get; set; } = 300;
         public int FlatsAutoExposureOptimal { get; set; } = 40000;
-
-        public bool IsDynamicDarkCorrection { get; set; }
         public double MaxExposure { get; set; }
         public int RGBImageGain { get; set; } = 1;
         public int ChemiImageGain { get; set; } = 100;

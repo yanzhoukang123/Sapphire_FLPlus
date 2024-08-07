@@ -33,7 +33,6 @@ namespace Azure.ScannerEUI.ViewModel
         private BinningFactorType _SelectedBinning = null;
         private GainType _SelectedGain = null;
 
-        private bool _IsDarkFrameCorrEnabled = false; //是否启用Dark校准
         private int _Left = 0;
         private int _Top = 0;
         private int _Width = 0;
@@ -70,7 +69,6 @@ namespace Azure.ScannerEUI.ViewModel
         private bool _IsCameraPanel = true;
         private Thread _ModeSwitch = null;
         private Thread _LEDFlicker = null;
-        private Thread _LEDBlueProcess = null;
         private DispatcherTimer timer_ = null;
         private ImageCaptureCommand _ImageCaptureCommand = null;
         private ImagingLiveCommand _LiveModeCommand = null;
@@ -176,19 +174,6 @@ namespace Azure.ScannerEUI.ViewModel
                     if(IsCameraConnected)
                        Workspace.This.CameraController.SetGain(value.Value);
                     RaisePropertyChanged("SelectedGain");
-                }
-            }
-        }
-
-        public bool IsDarkFrameCorrEnabled
-        {
-            get { return _IsDarkFrameCorrEnabled; }
-            set
-            {
-                if (_IsDarkFrameCorrEnabled != value)
-                {
-                    _IsDarkFrameCorrEnabled = value;
-                    RaisePropertyChanged("IsDarkFrameCorrEnabled");
                 }
             }
         }
@@ -678,13 +663,6 @@ namespace Azure.ScannerEUI.ViewModel
                 ImageChannelSettings imagingChannel = new ImageChannelSettings();
                 imagingChannel.Exposure = ((double)ExposureTime / Workspace.This.CameraController.USConvertMS); // exposure time in seconds
                 LEDTime= ((double)ExposureTime / Workspace.This.CameraController.USConvertMS);
-                if (LEDTime >= 3)
-                {
-                    CameraLed_Process = 0;
-                    Step = (double)100 / (double)LEDTime;
-                    Workspace.This.EthernetController.SetLedBarProgress(0);//全灭
-                    Workspace.This.EthernetController.SetLed(207);//蓝色
-                }
                 imagingChannel.BinningMode = SelectedBinning.VerticalBins;
                 imagingChannel.AdGain = SelectedGain.Value;
 
@@ -704,9 +682,7 @@ namespace Azure.ScannerEUI.ViewModel
                 _ImageCaptureCommand.CommandStatus += new ImageCaptureCommand.CommandStatusHandler(_ImageCaptureCommand_CommandStatus);
                 _ImageCaptureCommand.CompletionEstimate += new ImageCaptureCommand.CommandCompletionEstHandler(_ImageCaptureCommand_CompletionEstimate);
                 _ImageCaptureCommand.Start();
-                //_LEDBlueProcess = new Thread(LedBlueProcessBar);
-                //_LEDBlueProcess.IsBackground = true;
-                //_LEDBlueProcess.Start();
+                LedBlueProcessBar(LEDTime);
                 IsCapturing = true;
                 Workspace.This.CreateDarkmastersViewModel.IsCreatingDarkMasterPanel = false;
                 Workspace.This.CreateFlatsViewModel.IsCreatingFlatsPanel = false;
@@ -1175,43 +1151,14 @@ namespace Azure.ScannerEUI.ViewModel
             return false;
         }
 
-        public void LedBlueProcessBar()
+        public void LedBlueProcessBar(double ExposureTime)
         {
-            while (true)
+            if (ExposureTime >= 3)
             {
-                if (IsCapturing&& LEDTime>2)
-                {
-                    double Step = (double)100 / (double)LEDTime;
-                    int process = 0;
-                    for (int i = 0; i < LEDTime; i++)
-                    {
-                        process += (int)Step;
-                        Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(process));
-                        Thread.Sleep(1000);
-                    }
-                    ////Console.WriteLine(DateTime.Now.ToString());
-                    //double process = (double)LEDTime / (double)100;
-                    //int sleeptime = (int)(process * 800);
-                    //for (int i = 0; i < 100; i++)
-                    //{
-                    //    Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(i));
-                    //    Thread.Sleep(sleeptime);
-                    //}
-                    return;
-                    //Console.WriteLine(DateTime.Now.ToString());
-                }
-                Thread.Sleep(10);
-            }
-        }
-        public void LedBlueProcessBar1()
-        {
-            double Step = (double)100 / (double)LEDTime;
-            int process = 0;
-            for (int i = 0; i < LEDTime; i++)
-            {
-                process += (int)Step;
-                Workspace.This.EthernetController.SetLedBarProgress(Convert.ToByte(process));
-                Thread.Sleep(1000);
+                CameraLed_Process = 0;
+                Step = (double)100 / (double)ExposureTime;
+                Workspace.This.EthernetController.SetLedBarProgress(0);//全灭
+                Workspace.This.EthernetController.SetLed(207);//蓝色
             }
         }
         public void LedGreenBrightness()

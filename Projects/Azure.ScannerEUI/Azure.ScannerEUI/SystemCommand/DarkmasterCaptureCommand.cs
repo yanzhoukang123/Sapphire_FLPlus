@@ -279,7 +279,6 @@ namespace Azure.ScannerEUI.SystemCommand
                 {
                     if (_IsCommandAborted) { return null; }
 
-                    //_ActiveCamera.GrabImage(exposureTime, CaptureFrameType.Dark, ref darkImageBuffer);
                     // Grab an image from the camera
                     //将秒转为微秒
                     double us = _ActiveCamera.USConvertMS * _ActiveCamera.USConvertMS;

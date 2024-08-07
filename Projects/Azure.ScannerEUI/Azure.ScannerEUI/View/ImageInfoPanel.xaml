@@ -137,7 +137,7 @@
                 <Border Grid.Column="0" Grid.Row="4"
                     Visibility="{Binding Path=IsScannedImage, Converter={StaticResource boolToVisibilityNegateConverter}}">
                     <TextBlock
-                        Text="Readout Speed:"
+                        Text="EdrBitDepth:"
                         Style="{StaticResource Header2}"
                         />
                 </Border>
@@ -145,7 +145,7 @@
                     Visibility="{Binding Path=IsScannedImage, Converter={StaticResource boolToVisibilityNegateConverter}}">
                     <TextBlock
                         Style="{StaticResource Header3}"
-                        Text="{Binding Path=ImageInfo.ReadoutSpeed}"
+                        Text="{Binding Path=ImageInfo.EdrBitDepth}"
                         />
                 </Border>
                 <Border Grid.Column="0" Grid.Row="5"

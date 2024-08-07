@@ -13,7 +13,7 @@ namespace Azure.ScannerEUI.ViewModel
         private double _ExposureTime = 0.0;   // exposure time in seconds
         private int _ExposureMin = 0;
         private int _ExposureSec = 0;
-        private int _ExposureMsec = 0;
+        private int _ExposureMSec = 0;
         #endregion
 
         #region Public data
@@ -26,7 +26,7 @@ namespace Azure.ScannerEUI.ViewModel
                 TimeSpan timeSpan = TimeSpan.FromSeconds(_ExposureTime);
                 ExposureMin = timeSpan.Minutes;
                 ExposureSec = timeSpan.Seconds;
-                ExposureMsec = timeSpan.Milliseconds;
+                ExposureMSec = timeSpan.Milliseconds;
             }
         }
 
@@ -37,7 +37,7 @@ namespace Azure.ScannerEUI.ViewModel
             {
                 _ExposureMin = value;
                 RaisePropertyChanged("ExposureMin");
-                _ExposureTime = (double)_ExposureMsec / 1000.0 + (double)_ExposureSec + (double)_ExposureMin * 60.0;
+                _ExposureTime = (double)_ExposureMSec / 1000.0 + (double)_ExposureSec + (double)_ExposureMin * 60.0;
             }
         }
 
@@ -48,18 +48,18 @@ namespace Azure.ScannerEUI.ViewModel
             {
                 _ExposureSec = value;
                 RaisePropertyChanged("ExposureSec");
-                _ExposureTime = (double)_ExposureMsec / 1000.0 + (double)_ExposureSec + (double)_ExposureMin * 60.0;
+                _ExposureTime = (double)_ExposureMSec / 1000.0 + (double)_ExposureSec + (double)_ExposureMin * 60.0;
             }
         }
 
-        public int ExposureMsec
+        public int ExposureMSec
         {
-            get { return _ExposureMsec; }
+            get { return _ExposureMSec; }
             set
             {
-                _ExposureMsec = value;
-                RaisePropertyChanged("ExposureMsec");
-                _ExposureTime = (double)_ExposureMsec / 1000.0 + (double)_ExposureSec + (double)_ExposureMin * 60.0;
+                _ExposureMSec = value;
+                RaisePropertyChanged("ExposureMSec");
+                _ExposureTime = (double)_ExposureMSec / 1000.0 + (double)_ExposureSec + (double)_ExposureMin * 60.0;
             }
         }
         #endregion

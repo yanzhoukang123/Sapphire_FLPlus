@@ -257,7 +257,16 @@ namespace Azure.ScannerEUI.ViewModel
                 imageChannel.InitialExposureTime = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.InitialExposureTime;
                 imageChannel.ChemiInitialExposureTime = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.ChemiInitialExposureTime;
 
-                Workspace.This.CameraModeViewModel.IsWhiteLEDOn = true;  //Turn on LED (red/green/blue/white);
+                int gain = SettingsManager.ConfigSettings.CameraModeSettings.ChemiSettings.Gain;
+                if (Workspace.This.CameraController.cam_ != null)
+                {
+                    if (!Workspace.This.CameraController.SetGain(gain))
+                    {
+                        MessageBox.Show("Gain fail");
+                    }
+                }
+
+                Workspace.This.CameraModeViewModel.IsWhiteLEDOn = true;  //Turn on LED (red/green/blue/white); 目前硬件还不支持，以后需要根据情况来打开指定灯光
 
                 string targetDirectory = System.IO.Path.Combine(SettingsManager.ApplicationDataPath, "Masters\\");
                 string fileName = string.Format("U_{0}.dat", _SelectedLightingType.LightCode);
