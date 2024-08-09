@@ -312,6 +312,7 @@ namespace Azure.ScannerEUI.SystemCommand
             Workspace.This.LogMessage("=================Image Acquisition===================");
             writeableBitmap = null;
             //LED None
+            //At present, it is not possible to control RGB lights separately. Keep it this way for now.
             Workspace.This.EthernetController.SetRGBLightRegisterControl(LightCode);
             //Set Gain
             _ActiveCamera.SetGain(_Parameter.chemiimagegain);
@@ -621,6 +622,7 @@ namespace Azure.ScannerEUI.SystemCommand
             else if (LightCode == 3)
                 Workspace.This.LogMessage("===============================CalcAuto Blue================================");
             //LED
+            //At present, it is not possible to control RGB lights separately. Keep it this way for now.
             Workspace.This.EthernetController.SetRGBLightRegisterControl(LightCode);
             //Set Gain
             _ActiveCamera.SetGain(_Parameter.rgbimagegain);
@@ -768,6 +770,7 @@ namespace Azure.ScannerEUI.SystemCommand
         {
             Workspace.This.LogMessage("=================Image Acquisition===================");
             //LED
+            //At present, it is not possible to control RGB lights separately. Keep it this way for now.
             Workspace.This.EthernetController.SetRGBLightRegisterControl(LightCode);
             //Set Gain
             _ActiveCamera.SetGain(_Parameter.rgbimagegain);
@@ -873,7 +876,7 @@ namespace Azure.ScannerEUI.SystemCommand
         #region BlotFinding
         private unsafe void BlotFinding()
         {
-            //off LED
+            //LED
             Workspace.This.EthernetController.SetRGBLightRegisterControl(4);
             //Set Gain
             _ActiveCamera.SetGain(_Parameter.rgbimagegain);

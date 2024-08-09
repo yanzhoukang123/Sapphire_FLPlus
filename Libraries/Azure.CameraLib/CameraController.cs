@@ -18,7 +18,7 @@ namespace Azure.CameraLib
         public Toupcam cam_ = null;
         private Thread timer_ = null;
         private double _CcdTemp = 0;
-        private double _USConvertMS = 1000; //微秒转毫秒
+        private double _USConvertMS = 1000;
         private bool _IsCameraConnected = false;
         private decimal _ExposureTime_MIN;
         private decimal _ExposureTime_Max;
@@ -100,7 +100,7 @@ namespace Azure.CameraLib
             {
                 if (cam_ != null)
                 {
-                    //1秒获取一次TEC当前的温度
+                    //Retrieve the current temperature of TEC once per second
                     short nTemperature;
                     if (cam_.get_Temperature(out nTemperature))
                         CcdTemp = nTemperature / 10.0;
@@ -142,24 +142,24 @@ namespace Azure.CameraLib
             return true;
         }
         /// <summary>
-        /// 打开相机
+        /// 
         /// </summary>
-        /// <param name="camId">实例地址</param>
+        /// <param name="camId"></param>
         private bool startDevice(string camId)
         {
-            cam_ = Toupcam.Open(camId);//相机实例句柄
+            cam_ = Toupcam.Open(camId);
             if (cam_ != null)
             {
-                //关闭相机内部的自动曝光功能
+                //Turn off the automatic exposure function inside the camera, 
                 cam_?.put_AutoExpoEnable(false);
 
-                //获取相机的曝光时间范围,如果不在这个范围内，将无法捕获到图像，
+                //The exposure time range supported by the camera, in microseconds.
                 decimal min = 0, max = 0;
                 InitExpoTime(out min, out max);
                 ExposureTime_MIN = min;
                 ExposureTime_Max = max;
 
-                //获取相机的ROI
+                //ROI
                 uint xOffset = 0, yOffset = 0, width = 0, height = 0;
                 if (cam_.get_Roi(out xOffset, out yOffset, out width, out height))
                 {
@@ -170,14 +170,14 @@ namespace Azure.CameraLib
 
                 }
                 info = new Toupcam.FrameInfoV3();
-                ////视频模式
+                //// Live Mode,
                 //cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, 0);
-                //TEC 1=启动TEC,0=关闭TEC。 
+                //TEC 1=on,0=off。 
                 cam_.put_Option(Toupcam.eOPTION.OPTION_TEC, 1);
                 IsCameraConnected = true;
-                SetCCDTemp(-10);//设置-10
+                SetCCDTemp(-10);//-10
                 ChangeCaptureMode(1);
-                //if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
+                //if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback))) 
                 //    return false;
                 return true;
             }
@@ -243,7 +243,7 @@ namespace Azure.CameraLib
             }
         }
         /// <summary>
-        /// 捕获完成图像后
+        /// Triggered when the camera exposure completes an image
         /// </summary>
         private unsafe void OnEventImage()
         {
@@ -262,12 +262,12 @@ namespace Azure.CameraLib
             finally
             {
                 temp.Unlock();
-                if (SingeCapture)//完成了图像捕获
+                if (SingeCapture)
                 {
                     int stride = (temp.PixelWidth * temp.Format.BitsPerPixel + 7) / 8;
                     pixelData = new ushort[temp.PixelHeight * stride];
                     temp.CopyPixels(pixelData, stride, 0);
-                    SingeCapture = false;//停止捕获
+                    SingeCapture = false;
                 }
             }
         }
@@ -322,9 +322,9 @@ namespace Azure.CameraLib
             return false;
         }
         /// <summary>
-        /// 增益
+        /// Gain 100=1x.200=2x ...
         /// </summary>
-        /// <param name="gain">100，200，300，400，500</param>
+        /// <param name="gain">100-5000</param>
         /// <returns></returns>
         public bool SetGain(int gain)
         {
@@ -389,7 +389,8 @@ namespace Azure.CameraLib
             }
             return false;
         }
-        public bool ChangeTriggerMode(ushort trigger)  //1=捕获一张,0xffff=循环捕获，0=停止捕获, 触发模式才有效
+        //1=Capture one image, 0xffff=Loop capture, 0=Stop capture, triggering mode is only effective
+        public bool ChangeTriggerMode(ushort trigger) 
         {
             if (cam_.Trigger(trigger))
             {
@@ -399,15 +400,16 @@ namespace Azure.CameraLib
         }
         public unsafe bool CapturesImage(ref WriteableBitmap capturedImage)
         {
-            //更改为触发模式，这个模式下可以控制相机拍摄的图片张数，比如1张，或者一直循环。
+            //Change the camera to trigger mode, where it can capture an image by sending a signal.
             if (!ChangeCaptureMode(1))
                 return false;
             int currentMode = 0;
             cam_.get_Option(Toupcam.eOPTION.OPTION_TRIGGER, out currentMode);
-            if (ChangeTriggerMode(1))//捕获一张
+            //Capture an image.
+            if (ChangeTriggerMode(1))
             {
                 SingeCapture = true;
-                while (SingeCapture == true)//等待图像捕获完成
+                while (SingeCapture == true)//wait
                 {
                     Thread.Sleep(1);
                 }
@@ -428,7 +430,7 @@ namespace Azure.CameraLib
         }
         public unsafe bool ChangeCaptureMode(int mode)
         {
-            //0=视频模式,1=触发模式
+            //0=Live mode,1=trigger mode
             int currentMode = 0;
             _currentMode = mode;
             cam_.get_Option(Toupcam.eOPTION.OPTION_TRIGGER, out currentMode);
@@ -437,46 +439,46 @@ namespace Azure.CameraLib
                 if(!cam_.put_Option(Toupcam.eOPTION.OPTION_TRIGGER, mode))
                     return false;
             }
-            if (mode == 0 && currentMode != 0) //Live模式
+            if (mode == 0 && currentMode != 0) //Live
             {
                 if (!cam_.Stop())
                     return false;
                 ///*.
-                //  0 = 表示使用8Bits位深度.
-                //  1 = 表示使用本相机支持的最高位深度*/
+                //  0 = 8bit.
+                //  1 = 14bit
                 if (!cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 0))
                     return false;
-                //相机支持的最大位深度(bitdepth)
-                /* 0 = 使用RGB24
-                   1 = 在位深度 > 8时, 启用RGB48格式
-                   2 = 使用RGB32
-                   3 = 8位灰度(只对黑白相机有效)
-                   4 = 16位灰度(只对黑白相机并且位深度 > 8时有效)
-                   5 = 在位深度 > 8时, 启用RGB64格式 */
+                //(bitdepth)
+                /* 0 = RGB24
+                   1 = RGB48
+                   2 = RGB32
+                   3 = 8bit Gray
+                   4 = 16bit Gray
+                   5 = RGB64 */
                 if (!cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 2))
                     return false;
-                if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
+                if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))
                     return false;
             }
-            else if (mode == 1 && currentMode != 1)//触发模式
+            else if (mode == 1 && currentMode != 1)//trigger
             {
                 if (!cam_.Stop())
                     return false;
                 ///*.
-                //  0 = 表示使用8Bits位深度.
-                //  1 = 表示使用本相机支持的最高位深度*/
+                //  0 = 8bit.
+                //  1 = 14bit
                 if (!cam_.put_Option(Toupcam.eOPTION.OPTION_BITDEPTH, 1))
                     return false;
-                //相机支持的最大位深度(bitdepth)
-                /* 0 = 使用RGB24
-                   1 = 在位深度 > 8时, 启用RGB48格式
-                   2 = 使用RGB32
-                   3 = 8位灰度(只对黑白相机有效)
-                   4 = 16位灰度(只对黑白相机并且位深度 > 8时有效)
-                   5 = 在位深度 > 8时, 启用RGB64格式 */
+                //(bitdepth)
+                /* 0 = RGB24
+                   1 = RGB48
+                   2 = RGB32
+                   3 = 8bit Gray
+                   4 = 16bit Gray
+                   5 = RGB64 */
                 if (!cam_.put_Option(Toupcam.eOPTION.OPTION_RGB, 4))
                     return false;
-                if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback)))  //代理函数
+                if (!cam_.StartPullModeWithCallback(new Toupcam.DelegateEventCallback(DelegateOnEventCallback))) 
                     return false;
             }
             return true;

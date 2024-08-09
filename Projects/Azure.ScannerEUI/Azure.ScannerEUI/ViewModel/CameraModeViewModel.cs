@@ -106,7 +106,7 @@ namespace Azure.ScannerEUI.ViewModel
                 {
                     Workspace.This.EthernetController.SetLed(0);
                     Thread.Sleep(500);
-                    Workspace.This.EthernetController.SetLed(207);//蓝色
+                    Workspace.This.EthernetController.SetLed(207);//Blue
                 }
                 Thread.Sleep(1000);
             }
@@ -658,7 +658,7 @@ namespace Azure.ScannerEUI.ViewModel
                     MessageBox.Show("Exposure time out range.");
                     return;
                 }
-                //将毫秒转为微秒
+                //ms converto us
                 uint us_exposuretime = (uint)((double)ExposureTime * Workspace.This.CameraController.USConvertMS);
                 ImageChannelSettings imagingChannel = new ImageChannelSettings();
                 imagingChannel.Exposure = ((double)ExposureTime / Workspace.This.CameraController.USConvertMS); // exposure time in seconds
@@ -846,7 +846,7 @@ namespace Azure.ScannerEUI.ViewModel
                     MessageBox.Show("Exposure time out range.");
                     return;
                 }
-                //设置曝光时间，单位是微妙
+                ////ms converto us
                 uint ustime = (uint)((double)ExposureTime * Workspace.This.CameraController.USConvertMS);
                 ImagingLiveCommand.CameraParameterStruct Parameter = new ImagingLiveCommand.CameraParameterStruct();  //Set parameter
                 Parameter.ExposureTime = ustime;
@@ -859,7 +859,7 @@ namespace Azure.ScannerEUI.ViewModel
                 _LiveModeCommand.LiveImageReceived += new ImagingLiveCommand.ImageReceivedHandler(_LiveModeCommand_LiveImageReceived);
                 _LiveModeCommand.Completed += new ThreadBase.CommandCompletedHandler(_LiveModeCommand_Completed);
                 _LiveModeCommand.Start();
-                Workspace.This.EthernetController.SetLedBarProgress(0x64);//全亮
+                Workspace.This.EthernetController.SetLedBarProgress(0x64);//LED lights up
                 IsContinuous = true;
                 Workspace.This.CreateDarkmastersViewModel.IsCreatingDarkMasterPanel = false;
                 Workspace.This.CreateFlatsViewModel.IsCreatingFlatsPanel = false;
@@ -1037,7 +1037,7 @@ namespace Azure.ScannerEUI.ViewModel
                     if (IsCameraConnected)
                     {
                         Workspace.This.IVVM.ResetTemperatureAlarmsSwitch(false);  //关闭温度报警  close temperature alarm
-                        Workspace.This.EthernetController.SetCurrentMode(1);//告诉FPGA进入到Chemi模式
+                        Workspace.This.EthernetController.SetCurrentMode(1);//告诉FPGA进入到Chemi模式  Enter Chemi mode
                         //Workspace.This.NewParameterVM.FanReserveTemperature = 40;
                         //Workspace.This.NewParameterVM.WriteOtherSettings();
                         Workspace.This.MotorVM.AbsXPos = AbsXPos;
@@ -1081,7 +1081,7 @@ namespace Azure.ScannerEUI.ViewModel
                     Workspace.This.IsScanner_Mode = Visibility.Visible;
                     Workspace.This.ScannerModelWindowWidth = 630;
                     Workspace.This.IsMotorEnabled = true;
-                    Workspace.This.EthernetController.SetCurrentMode(0);//告诉FPGA结束Chemi模式
+                    Workspace.This.EthernetController.SetCurrentMode(0);//告诉FPGA结束Chemi模式  End to Chemi mode
                     IsChemiMode = false;
                     Workspace.This.EstimatedTimeRemaining = string.Empty;
                 });
@@ -1129,6 +1129,7 @@ namespace Azure.ScannerEUI.ViewModel
             }
         }
 
+        //获取以太网所支持的最大速率 Obtain the maximum speed supported by Ethernet
         public bool GetEthernetSpeed()
         {
             NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
@@ -1157,14 +1158,14 @@ namespace Azure.ScannerEUI.ViewModel
             {
                 CameraLed_Process = 0;
                 Step = (double)100 / (double)ExposureTime;
-                Workspace.This.EthernetController.SetLedBarProgress(0);//全灭
-                Workspace.This.EthernetController.SetLed(207);//蓝色
+                Workspace.This.EthernetController.SetLedBarProgress(0);//The LED light is off
+                Workspace.This.EthernetController.SetLed(207);//blue
             }
         }
         public void LedGreenBrightness()
         {
-            Workspace.This.EthernetController.SetLed(175);//绿色
-            Workspace.This.EthernetController.SetLedBarProgress(0x64);//全亮
+            Workspace.This.EthernetController.SetLed(175);//Greey
+            Workspace.This.EthernetController.SetLedBarProgress(0x64);//LED lights up
         }
         public class DarkFrameCorrType
         {
