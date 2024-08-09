@@ -1027,24 +1027,25 @@ namespace Azure.Image.Processing
 
         public Mat ConvertWriteableBitmapToMat(WriteableBitmap writeableBitmap)
         {
-            int width = writeableBitmap.PixelWidth;
-            int height = writeableBitmap.PixelHeight;
-            writeableBitmap.Lock();
-            Mat mat = new Mat(height, width, MatType.CV_16U);
+            //int width = writeableBitmap.PixelWidth;
+            //int height = writeableBitmap.PixelHeight;
+            //writeableBitmap.Lock();
+            //Mat mat = new Mat(height, width, MatType.CV_16U);
 
-            unsafe
-            {
-                ushort* ptr = (ushort*)writeableBitmap.BackBuffer;
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        int index = y * width + x;
-                        mat.Set<ushort>(y, x, ptr[index]);
-                    }
-                }
-            }
-            writeableBitmap.Unlock();
+            //unsafe
+            //{
+            //    ushort* ptr = (ushort*)writeableBitmap.BackBuffer;
+            //    for (int y = 0; y < height; y++)
+            //    {
+            //        for (int x = 0; x < width; x++)
+            //        {
+            //            int index = y * width + x;
+            //            mat.Set<ushort>(y, x, ptr[index]);
+            //        }
+            //    }
+            //}
+            //writeableBitmap.Unlock();
+            Mat mat = writeableBitmap.ToMat();
             return mat;
         }
 

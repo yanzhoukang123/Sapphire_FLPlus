@@ -336,6 +336,11 @@
     <Gain Position="3" Value="300" DisplayName="300" />
     <Gain Position="4" Value="400" DisplayName="400" />
     <Gain Position="5" Value="500" DisplayName="500" />
+    <Gain Position="6" Value="600" DisplayName="600" />
+    <Gain Position="7" Value="700" DisplayName="700" />
+    <Gain Position="8" Value="800" DisplayName="800" />
+    <Gain Position="9" Value="900" DisplayName="900" />
+    <Gain Position="10" Value="1000" DisplayName="1000" />
   </Gains>
 
   <!--灯板R,G,B通道 -->

@@ -1287,7 +1287,205 @@ namespace Azure.ScannerEUI.SystemCommand
 
         }
 
-        public Mat ChemiSOLO_ApplyDark_GlowFun(Mat DarkMasterImage, Mat srcImage, Mat BiasImage)
+        public unsafe Mat ChemiSOLO_ApplyDark_GlowFun(Mat DarkMasterImage, Mat srcImage, Mat BiasImage)
+        {
+            // 1.使用与样本图像l2相同的箱子加载暗主图像l1 。
+            // 设定参数
+            Mat l1 = new Mat();
+            Mat l2 = srcImage;
+            Cv2.Subtract(DarkMasterImage, BiasImage, l1);
+            int interval = 5;
+            // 2.在l1的4个角测量300x300像素盒的平均强度。
+            int m = l1.Height;
+            int n = l1.Width;
+            int box = 300;
+            int box_m = m - box;
+            int box_n = n - box;
+            float d1 = 0, d2 = 0, d3 = 0, d4 = 0;
+            //
+            l1.ConvertTo(l1, 5);
+            float* ptr_l1 = (float*)l1.DataPointer;
+            float pixelValue = 0;
+            for (int x = 0; x < box; x++)
+            {
+                for (int y = 0; y < box; y++)
+                {
+                    pixelValue = *(ptr_l1 + x * l1.Step() / sizeof(float) + y); // 计算像素位置
+                    d1 += pixelValue;
+                    //d2 += l1.At<float>(x, y);
+                }
+            }
+            d1 /= 900;
+            //
+            for (int x = box_m; x < m; x++)
+            {
+                for (int y = 0; y < box; y++)
+                {
+                    pixelValue = *(ptr_l1 + x * l1.Step() / sizeof(float) + y); // 计算像素位置
+                    d2 += pixelValue;
+                    //d2 += l1.At<float>(x, y);
+                }
+            }
+            d2 /= 900;
+            //
+            for (int x = 0; x < box; x++)
+            {
+                for (int y = box_n; y < n; y++)
+                {
+                    pixelValue = *(ptr_l1 + x * l1.Step() / sizeof(float) + y); // 计算像素位置
+                    d3 += pixelValue;
+                    //d3 += l1.At<float>(x, y);
+                }
+            }
+            d3 /= 900;
+            //
+            for (int x = box_m; x < m; x++)
+            {
+                for (int y = box_n; y < n; y++)
+                {
+                    pixelValue = *(ptr_l1 + x * l1.Step() / sizeof(float) + y); // 计算像素位置
+                    d4 += pixelValue;
+                    //d4 += l1.At<float>(x, y);
+                }
+            }
+            d4 /= 900;
+
+            // 3.在强度最高的角落，定义一个W/5 * H/5区域（W是图像宽度和H是图像高度）。
+            int h_5 = m / 5;
+            int w_5 = n / 5;
+            //cout << h_5 << "," << w_5 << endl;
+            //system("pause");
+            int interval_h = (h_5 / interval);
+            int interval_w = (w_5 / interval);
+            l2.ConvertTo(l2, 5);
+            float* ptr_l2 = (float*)l2.DataPointer; // 假设 Mat 类型为 CV_16UC1
+            float s_1, s_2;
+            int array_index = 0;
+            int x_sta = 0, x_end = 0, y_sta = 0, y_end = 0;
+            // 最强角落的判断和位置确定
+            if (d1 > d2 && d1 > d3 && d1 > d4)
+            {
+                x_sta = 0;
+                x_end = h_5;
+                y_sta = 0;
+                y_end = w_5;
+            }
+            else if (d2 > d1 && d2 > d3 && d2 > d4)
+            {
+                x_sta = m - h_5;
+                x_end = m;
+                y_sta = 0;
+                y_end = w_5;
+
+            }
+            else if (d3 > d1 && d3 > d2 && d3 > d4)
+            {
+                x_sta = 0;
+                x_end = h_5;
+                y_sta = n - w_5;
+                y_end = n;
+            }
+            else if (d4 > d1 && d4 > d2 && d4 > d3)
+            {
+                x_sta = m - h_5;
+                x_end = m;
+                y_sta = n - w_5;
+                y_end = n;
+            }
+            // 4.在W/5 * H/5区域均匀定义 5*5 采样网格 。
+            // 5.在25个网格点的每一个上，测量一个W/100x H/100盒子的平均强度，并将这25个测量值存储在阵列D1中。
+            // 6.在l2的同一个角落，以相同的采样顺序执行相同的 25 次测量，并将25次测量存储在阵列D2中。
+            // 第 4,5,6 步一起实现。
+            // 采样网格 。
+            int h_100 = m / 100;
+            int w_100 = n / 100;
+
+            x_end = x_sta + interval_h * 5;
+            y_end = y_sta + interval_w * 5;
+
+            int center_dis_x = (interval_h - h_100) / 2;
+            int center_dis_y = (interval_w - w_100) / 2;
+            float[,] D_array = new float[25, 2];
+            for (int x = x_sta; x < x_end; x = x + interval_h)
+            {
+                for (int y = y_sta; y < y_end; y = y + interval_w)
+                {
+                    s_1 = 0;
+                    s_2 = 0;
+                    for (int x_1 = x + center_dis_x; x_1 < x + h_100 + center_dis_x; x_1++)
+                    {
+                        for (int y_1 = y + center_dis_y; y_1 < y + w_100 + center_dis_y; y_1++)
+                        {
+                            float pixelValue_l1 = *(ptr_l1 + x_1 * l1.Step() / sizeof(float) + y_1); // 计算像素位置
+                            s_1 += pixelValue_l1;
+                            float pixelValue_l2 = *(ptr_l2 + x_1 * l2.Step() / sizeof(float) + y_1); // 计算像素位置
+                            s_2 += pixelValue_l2;
+                        }
+                    }
+                    s_1 /= ((float)w_100 * (float)h_100);
+                    s_2 /= ((float)w_100 * (float)h_100);
+                    // 存到数组
+                    D_array[array_index, 0] = s_1;
+                    D_array[array_index, 1] = s_2;
+                    array_index++;
+                }
+            }
+
+            //7.进行线性拟合，得到拟合函数Y = aX + b，其中X为D1，Y为D2。
+
+            List<OpenCvSharp.Point2f> points = new List<OpenCvSharp.Point2f>();
+            for (int i = 0; i < 24; ++i)
+            {
+                points.Add(new OpenCvSharp.Point2f(D_array[i, 0], D_array[i, 1]));
+            }
+            var line = Cv2.FitLine(points, DistanceTypes.L1, 0, 0.01, 0.01);
+            double k = line.Vy / line.Vx;//直线斜率
+            double b = line.Y1 - k * line.X1;
+            // 8.执行 l1 * a + b，为样本图像L2生成模拟暗图像l3。
+            Mat l3 = new Mat(m, n, MatType.CV_16UC1);
+
+            Mat l4 = new Mat(m, n, MatType.CV_16UC1);
+
+            l1.ConvertTo(l1, 2);
+            //imwrite("l1l.tif", l1);
+            l1.ConvertTo(l1, 5);
+            l3 = l1 * k + b;
+
+            // 9.执行图像减法l2 - l3，返回同时进行暗校正和辉光校正的结果图像。
+            l4 = l2 - l3;
+            int* ptr_l4 = (int*)l4.DataPointer;
+            int rows = l4.Rows;
+            int cols = l4.Cols;
+            //如果l4里的值小于0就赋值为0
+            Mat mask = new Mat();
+            Cv2.Compare(l4, 0, mask, CmpType.LE);
+            l4.SetTo(Scalar.All(0), mask);
+
+            //for (int i = 0; i < rows; i++)
+            //{
+            //    for (int j = 0; j < cols; j++)
+            //    {
+            //        float pixelValue_l1 = *(ptr_l4 + i * l4.Step() / sizeof(int) + j); // 计算像素位置
+            //        if (pixelValue_l1 < 0)
+            //        {
+            //            *(ptr_l4 + i * l4.Step() / sizeof(float) + j) = 0;
+            //        }
+
+            //    }
+            //}
+            double minVal = 0.0;
+            double maxVal = 0.0;
+            Cv2.MinMaxLoc(l4, out minVal, out maxVal);
+            l4 -= minVal;
+
+            // 10. 保存 l3 和 l4。
+            l3.ConvertTo(l3, 2);
+            //imwrite("l3.tif", l3);
+            l4.ConvertTo(l4, 2);
+            return l4;
+
+        }
+        public Mat ChemiSOLO_ApplyDark_GlowFun1(Mat DarkMasterImage, Mat srcImage, Mat BiasImage)
         {
             // 1.使用与样本图像l2相同的箱子加载暗主图像l1 。
             // 设定参数
